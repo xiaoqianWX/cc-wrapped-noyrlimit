@@ -110,6 +110,7 @@ export interface ClaudeCodeStats {
 
   // Activity heatmap (for the year)
   dailyActivity: Map<string, number>; // "2025-01-15" -> count
+  dailyCost: Map<string, number>; // "2025-01-15" -> cost in USD
 
   // Most active day
   mostActiveDay: {
@@ -132,4 +133,5 @@ export interface WeekdayActivity {
 export interface CliArgs {
   year?: number;
   help?: boolean;
+  web?: boolean;
 }

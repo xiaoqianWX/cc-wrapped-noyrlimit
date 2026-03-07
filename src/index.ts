@@ -11,27 +11,30 @@ import { displayInTerminal, getTerminalName } from "./terminal/display";
 import { copyImageToClipboard } from "./clipboard";
 import { isWrappedAvailable } from "./utils/dates";
 import { formatCostFull, formatNumber, formatNumberFull } from "./utils/format";
+import { startDashboard } from "./web/server";
 import type { ClaudeCodeStats } from "./types";
 
 const VERSION = "1.0.0";
 
 function printHelp() {
   console.log(`
-cc-wrapped v${VERSION}
+cc-wrapped-noyrlimit v${VERSION}
 
 Generate your Claude Code year in review stats card.
 
 USAGE:
-  cc-wrapped [OPTIONS]
+  cc-wrapped-noyrlimit [OPTIONS]
 
 OPTIONS:
   --year <YYYY>    Generate wrapped for a specific year (default: current year)
+  --web, -w        Open interactive dashboard in browser
   --help, -h       Show this help message
   --version, -v    Show version number
 
 EXAMPLES:
-  cc-wrapped              # Generate current year wrapped
-  cc-wrapped --year 2025  # Generate 2025 wrapped
+  cc-wrapped-noyrlimit              # Generate current year wrapped
+  cc-wrapped-noyrlimit --year 2025  # Generate 2025 wrapped
+  cc-wrapped-noyrlimit --web        # Open interactive web dashboard
 `);
 }
 
@@ -41,6 +44,7 @@ async function main() {
     args: process.argv.slice(2),
     options: {
       year: { type: "string", short: "y" },
+      web: { type: "boolean", short: "w" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
     },
@@ -54,7 +58,7 @@ async function main() {
   }
 
   if (values.version) {
-    console.log(`cc-wrapped v${VERSION}`);
+    console.log(`cc-wrapped-noyrlimit v${VERSION}`);
     process.exit(0);
   }
 
@@ -98,6 +102,12 @@ async function main() {
   }
 
   spinner.stop("Found your stats!");
+
+  // Web dashboard mode
+  if (values.web) {
+    await startDashboard(stats, requestedYear);
+    return; // unreachable, but satisfies TS
+  }
 
   const activityDates = Array.from(stats.dailyActivity.keys())
     .map((d) => new Date(d))
@@ -147,7 +157,7 @@ async function main() {
     p.log.info(`Terminal (${getTerminalName()}) doesn't support inline images`);
   }
 
-  const filename = `cc-wrapped-${requestedYear}.png`;
+  const filename = `cc-wrapped-noyrlimit-${requestedYear}.png`;
   const { success, error } = await copyImageToClipboard(image.fullSize, filename);
 
   if (success) {
@@ -213,7 +223,7 @@ function generateTweetUrl(stats: ClaudeCodeStats): string {
     `Total Estimated Cost: ${stats.hasUsageCost ? formatCostFull(stats.totalCost) : "N/A"}`
   );
   lines.push("");
-  lines.push("Get yours: npx cc-wrapped");
+  lines.push("Get yours: npx cc-wrapped-noyrlimit");
   lines.push("");
   lines.push("Credit: @nummanali @moddi3io");
   lines.push("");

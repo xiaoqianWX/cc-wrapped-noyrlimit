@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Postinstall script for cc-wrapped
+ * Postinstall script for cc-wrapped-noyrlimit
  *
  * This script runs after npm install and symlinks the correct platform-specific
  * binary to the bin directory. It auto-detects:
@@ -109,7 +109,7 @@ function getPackageName() {
   }
 
   // Build package name parts
-  const parts = ["cc-wrapped", platform, arch];
+  const parts = ["cc-wrapped-noyrlimit", platform, arch];
 
   // Add baseline suffix for x64 without AVX2
   if (arch === "x64" && !detectAVX2()) {
@@ -128,7 +128,7 @@ function getPackageName() {
  * Find the binary from the platform package
  */
 function findBinary(packageName) {
-  const binaryName = os.platform() === "win32" ? "cc-wrapped.exe" : "cc-wrapped";
+  const binaryName = os.platform() === "win32" ? "cc-wrapped-noyrlimit.exe" : "cc-wrapped-noyrlimit";
 
   try {
     const packageJsonPath = require.resolve(`${packageName}/package.json`);
@@ -201,13 +201,12 @@ async function main() {
     const packageName = getPackageName();
 
     if (!packageName) {
-      console.error(`cc-wrapped: Unsupported platform: ${os.platform()}-${os.arch()}`);
-      console.error("Please download the binary manually from:");
-      console.error("https://github.com/numman-ali/cc-wrapped/releases");
+      console.error(`cc-wrapped-noyrlimit: Unsupported platform: ${os.platform()}-${os.arch()}`);
+      console.error("Please download the binary manually from the releases page.");
       process.exit(0); // Exit gracefully
     }
 
-    console.log(`cc-wrapped: Detected platform package: ${packageName}`);
+    console.log(`cc-wrapped-noyrlimit: Detected platform package: ${packageName}`);
 
     const result = findBinary(packageName);
 
@@ -217,7 +216,7 @@ async function main() {
       const basePackage = baseParts.join("-");
 
       if (basePackage !== packageName) {
-        console.log(`cc-wrapped: Trying fallback package: ${basePackage}`);
+        console.log(`cc-wrapped-noyrlimit: Trying fallback package: ${basePackage}`);
         const fallbackResult = findBinary(basePackage);
 
         if (fallbackResult) {
@@ -226,16 +225,14 @@ async function main() {
         }
       }
 
-      console.error(`cc-wrapped: Could not find binary for ${packageName}`);
+      console.error(`cc-wrapped-noyrlimit: Could not find binary for ${packageName}`);
       console.error("The optional dependency may have failed to install.");
-      console.error("Please download the binary manually from:");
-      console.error("https://github.com/numman-ali/cc-wrapped/releases");
       process.exit(0);
     }
 
     linkBinary(result.binaryPath, result.binaryName);
   } catch (error) {
-    console.error("cc-wrapped: Postinstall error:", error.message);
+    console.error("cc-wrapped-noyrlimit: Postinstall error:", error.message);
     process.exit(0); // Exit gracefully to not break npm install
   }
 }

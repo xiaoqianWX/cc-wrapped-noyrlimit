@@ -11,6 +11,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
   ]);
 
   const dailyActivity = new Map<string, number>();
+  const dailyCost = new Map<string, number>();
   const weekdayCounts: [number, number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0, 0];
 
   let totalMessages = 0;
@@ -29,6 +30,11 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
       weekdayCounts[weekday] += messageCount;
     }
     totalSessions = usageSummary.totalSessions;
+    for (const [date, cost] of usageSummary.dailyCost.entries()) {
+      if (new Date(date).getFullYear() === year) {
+        dailyCost.set(date, cost);
+      }
+    }
   } else {
     for (const entry of statsCache.dailyActivity ?? []) {
       const entryDate = entry?.date;
@@ -218,6 +224,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     currentStreak,
     maxStreakDays,
     dailyActivity,
+    dailyCost,
     mostActiveDay,
     weekdayActivity,
   };

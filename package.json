@@ -1,5 +1,5 @@
 {
-  "name": "cc-wrapped",
+  "name": "cc-wrapped-noyrlimit",
   "version": "1.0.0",
   "author": {
     "name": "Numman Ali",
@@ -18,12 +18,13 @@
     "claude",
     "claude-code",
     "wrapped",
-    "cc-wrapped"
+    "cc-wrapped",
+    "cc-wrapped-noyrlimit"
   ],
   "license": "MIT",
   "type": "module",
   "bin": {
-    "cc-wrapped": "./bin/cc-wrapped"
+    "cc-wrapped-noyrlimit": "./bin/cc-wrapped-noyrlimit"
   },
   "scripts": {
     "start": "bun src/index.ts",

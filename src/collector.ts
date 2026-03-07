@@ -54,6 +54,7 @@ export interface ClaudeUsageSummary {
   modelTokenTotals: Map<string, number>;
   firstTimestamp: Date | null;
   dailyActivity: Map<string, number>;
+  dailyCost: Map<string, number>;
   totalMessages: number;
   totalSessions: number;
 }
@@ -102,6 +103,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   const pricingCache = new Map<string, ModelPricing | null>();
   const processedHashes = new Set<string>();
   const dailyActivity = new Map<string, number>();
+  const dailyCost = new Map<string, number>();
   const sessionIds = new Set<string>();
 
   let totalInputTokens = 0;
@@ -169,6 +171,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
         const hasCost = typeof rawCost === "number" && Number.isFinite(rawCost);
         if (hasCost) {
           totalCostUSD += rawCost;
+          dailyCost.set(dateKey, (dailyCost.get(dateKey) || 0) + rawCost);
         }
 
         if (!usage) continue;
@@ -196,7 +199,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
             }
 
             if (pricing) {
-              totalCostUSD += calculateCostUSD(
+              const estimatedCost = calculateCostUSD(
                 {
                   inputTokens: input,
                   outputTokens: output,
@@ -205,6 +208,8 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
                 },
                 pricing
               );
+              totalCostUSD += estimatedCost;
+              dailyCost.set(dateKey, (dailyCost.get(dateKey) || 0) + estimatedCost);
             }
           }
         }
@@ -222,6 +227,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     modelTokenTotals,
     firstTimestamp,
     dailyActivity,
+    dailyCost,
     totalMessages,
     totalSessions: sessionIds.size,
   };
