@@ -37,6 +37,14 @@ export interface ClaudeStatsCache {
   firstSessionDate?: string;
 }
 
+export interface ClaudeModelUsageSummary {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadInputTokens: number;
+  cacheCreationInputTokens: number;
+  webSearchRequests: number;
+}
+
 const CLAUDE_DATA_PATH = join(os.homedir(), ".claude");
 const CLAUDE_STATS_CACHE_PATH = join(CLAUDE_DATA_PATH, "stats-cache.json");
 const CLAUDE_HISTORY_PATH = join(CLAUDE_DATA_PATH, "history.jsonl");
@@ -52,11 +60,13 @@ export interface ClaudeUsageSummary {
   totalTokens: number;
   totalCostUSD: number;
   modelTokenTotals: Map<string, number>;
+  modelUsage: Map<string, ClaudeModelUsageSummary>;
   firstTimestamp: Date | null;
   dailyActivity: Map<string, number>;
   dailyCost: Map<string, number>;
   totalMessages: number;
   totalSessions: number;
+  totalWebSearchRequests: number;
 }
 
 export async function checkClaudeDataExists(): Promise<boolean> {
@@ -64,13 +74,24 @@ export async function checkClaudeDataExists(): Promise<boolean> {
     await readFile(CLAUDE_STATS_CACHE_PATH);
     return true;
   } catch {
-    return false;
+    const [roots, historyExists] = await Promise.all([
+      getClaudeProjectRoots(),
+      pathExists(CLAUDE_HISTORY_PATH),
+    ]);
+    return roots.length > 0 || historyExists;
   }
 }
 
 export async function loadClaudeStatsCache(): Promise<ClaudeStatsCache> {
-  const raw = await readFile(CLAUDE_STATS_CACHE_PATH, "utf8");
-  return JSON.parse(raw) as ClaudeStatsCache;
+  try {
+    const raw = await readFile(CLAUDE_STATS_CACHE_PATH, "utf8");
+    return {
+      ...createEmptyStatsCache(),
+      ...(JSON.parse(raw) as ClaudeStatsCache),
+    };
+  } catch {
+    return createEmptyStatsCache();
+  }
 }
 
 export async function collectClaudeProjects(year: number): Promise<Set<string>> {
@@ -100,6 +121,7 @@ export async function collectClaudeProjects(year: number): Promise<Set<string>> 
 export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsageSummary> {
   const roots = await getClaudeProjectRoots();
   const modelTokenTotals = new Map<string, number>();
+  const modelUsage = new Map<string, ClaudeModelUsageSummary>();
   const pricingCache = new Map<string, ModelPricing | null>();
   const processedHashes = new Set<string>();
   const dailyActivity = new Map<string, number>();
@@ -114,6 +136,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   let totalCostUSD = 0;
   let firstTimestamp: Date | null = null;
   let totalMessages = 0;
+  let totalWebSearchRequests = 0;
 
   for (const root of roots) {
     const exists = await pathIsDirectory(root);
@@ -180,6 +203,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
         const output = ensureNumber(usage.output_tokens);
         const cacheCreate = ensureNumber(usage.cache_creation_input_tokens);
         const cacheRead = ensureNumber(usage.cache_read_input_tokens);
+        const webSearchRequests = ensureNumber(usage.server_tool_use?.web_search_requests);
         const entryTotal = input + output + cacheCreate + cacheRead;
 
         totalInputTokens += input;
@@ -187,9 +211,23 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
         totalCacheCreationTokens += cacheCreate;
         totalCacheReadTokens += cacheRead;
         totalTokens += entryTotal;
+        totalWebSearchRequests += webSearchRequests;
 
         if (typeof model === "string" && model.trim() !== "") {
           modelTokenTotals.set(model, (modelTokenTotals.get(model) || 0) + entryTotal);
+          const currentModelUsage = modelUsage.get(model) ?? {
+            inputTokens: 0,
+            outputTokens: 0,
+            cacheReadInputTokens: 0,
+            cacheCreationInputTokens: 0,
+            webSearchRequests: 0,
+          };
+          currentModelUsage.inputTokens += input;
+          currentModelUsage.outputTokens += output;
+          currentModelUsage.cacheReadInputTokens += cacheRead;
+          currentModelUsage.cacheCreationInputTokens += cacheCreate;
+          currentModelUsage.webSearchRequests += webSearchRequests;
+          modelUsage.set(model, currentModelUsage);
 
           if (!hasCost && entryTotal > 0) {
             let pricing = pricingCache.get(model);
@@ -225,11 +263,21 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     totalTokens,
     totalCostUSD,
     modelTokenTotals,
+    modelUsage,
     firstTimestamp,
     dailyActivity,
     dailyCost,
     totalMessages,
     totalSessions: sessionIds.size,
+    totalWebSearchRequests,
+  };
+}
+
+function createEmptyStatsCache(): ClaudeStatsCache {
+  return {
+    dailyActivity: [],
+    dailyModelTokens: [],
+    modelUsage: {},
   };
 }
 
@@ -287,6 +335,15 @@ async function pathIsDirectory(path: string): Promise<boolean> {
   try {
     const info = await stat(path);
     return info.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
   } catch {
     return false;
   }
