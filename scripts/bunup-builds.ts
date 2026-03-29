@@ -9,7 +9,7 @@ type Target = {
   avx2?: false;
 };
 
-export const targetpackageName = "cc-wrapped";
+export const targetpackageName = "cc-wrapped-noyrlimit";
 export const getTargetName = (item: Target) => {
   return [
     targetpackageName,

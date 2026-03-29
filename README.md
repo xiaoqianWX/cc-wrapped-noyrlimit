@@ -1,6 +1,6 @@
 <div align="center">
 
-# cc-wrapped
+# cc-wrapped-noyrlimit
 
 **Your year in code, beautifully visualized.**
 
@@ -31,19 +31,19 @@ Generate a personalized "Spotify Wrapped"-style summary of your [Claude Code](ht
 Run directly without installing:
 
 ```bash
-npx cc-wrapped # or bunx, or yarn/pnpm dlx
+npx cc-wrapped-noyrlimit # or bunx, or yarn/pnpm dlx
 ```
 
 ### Global Install
 
 ```bash
-npm install -g cc-wrapped # or bun/yarn/pnpm
+npm install -g cc-wrapped-noyrlimit # or bun/yarn/pnpm
 ```
 
 Then run anywhere:
 
 ```bash
-cc-wrapped
+cc-wrapped-noyrlimit
 ```
 
 ## Usage Options

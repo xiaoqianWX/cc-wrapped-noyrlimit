@@ -1,29 +1,30 @@
 {
-  "name": "cc-wrapped",
+  "name": "cc-wrapped-noyrlimit",
   "version": "1.0.1",
   "author": {
     "name": "Numman Ali",
     "email": "numman.ali@gmail.com"
   },
   "description": "Generate a personalized Spotify Wrapped-style summary of your Claude Code usage",
-  "homepage": "https://github.com/numman-ali/cc-wrapped",
+  "homepage": "https://github.com/xiaoqianWX/cc-wrapped-noyrlimit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/numman-ali/cc-wrapped.git"
+    "url": "git+https://github.com/xiaoqianWX/cc-wrapped-noyrlimit.git"
   },
   "bugs": {
-    "url": "https://github.com/numman-ali/cc-wrapped/issues"
+    "url": "https://github.com/xiaoqianWX/cc-wrapped-noyrlimit/issues"
   },
   "keywords": [
     "claude",
     "claude-code",
     "wrapped",
-    "cc-wrapped"
+    "cc-wrapped",
+    "cc-wrapped-noyrlimit"
   ],
   "license": "MIT",
   "type": "module",
   "bin": {
-    "cc-wrapped": "./bin/cc-wrapped"
+    "cc-wrapped-noyrlimit": "bin/cc-wrapped-noyrlimit"
   },
   "scripts": {
     "start": "bun src/index.ts",

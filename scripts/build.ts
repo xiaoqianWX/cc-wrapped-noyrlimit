@@ -48,7 +48,7 @@ export const buildTargets = async (version: string) => {
 // Allow running directly
 if (import.meta.main) {
   const version = process.argv[2] || pkg.version;
-  console.log(`\n🎁 Building cc-wrapped v${version}\n`);
+  console.log(`\n🎁 Building cc-wrapped-noyrlimit v${version}\n`);
   await buildTargets(version);
   console.log("\n✅ Build complete\n");
 }
