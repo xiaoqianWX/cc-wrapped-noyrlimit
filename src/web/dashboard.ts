@@ -213,6 +213,15 @@ export function generateDashboardHTML(stats: ClaudeCodeStats): string {
     color: var(--text-muted);
     margin-top: 2px;
   }
+  .notice-banner {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--surface-border);
+    background: color-mix(in srgb, var(--accent-secondary) 12%, var(--surface));
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
 
   /* Heatmap */
   .heatmap-section { margin-bottom: 24px; }
@@ -352,6 +361,12 @@ export function generateDashboardHTML(stats: ClaudeCodeStats): string {
     <h1>Claude Code Wrapped ${year}</h1>
     <p>Your year in review</p>
   </div>
+
+  ${
+    stats.hasUsageCost
+      ? ""
+      : `<div class="notice-banner">Estimated cost couldn't be calculated from your Claude logs, so this wrapped omits Usage Cost.</div>`
+  }
 
   <!-- Key Metrics -->
   <div class="metrics-grid">

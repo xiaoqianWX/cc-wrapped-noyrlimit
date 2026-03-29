@@ -14,7 +14,7 @@ import { formatCostFull, formatNumber, formatNumberFull } from "./utils/format";
 import { startDashboard } from "./web/server";
 import type { ClaudeCodeStats } from "./types";
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 
 function printHelp() {
   console.log(`
@@ -102,6 +102,12 @@ async function main() {
   }
 
   spinner.stop("Found your stats!");
+
+  if (!stats.hasUsageCost) {
+    p.log.warn(
+      "Estimated cost couldn't be calculated from your Claude logs, so the wrapped will omit Usage Cost."
+    );
+  }
 
   // Web dashboard mode
   if (values.web) {
