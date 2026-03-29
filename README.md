@@ -126,6 +126,8 @@ Releases are automated via [semantic-release](https://semantic-release.gitbook.i
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+Maintainer note: fork-specific release and package history lives in [FORK_NOTES.md](./FORK_NOTES.md).
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
