@@ -86,6 +86,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     }
   }
 
+  const hasRawModelUsage = usageSummary.modelUsage.size > 0;
   const hasUsageSummaryTokens =
     usageSummary.totalTokens > 0 ||
     usageSummary.totalInputTokens > 0 ||
@@ -98,7 +99,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
   let totalCost = usageSummary.totalCostUSD;
   let totalCacheReadTokens = usageSummary.totalCacheReadTokens;
   let totalCacheWriteTokens = usageSummary.totalCacheCreationTokens;
-  let totalWebSearchRequests = 0;
+  let totalWebSearchRequests = hasRawModelUsage ? usageSummary.totalWebSearchRequests : 0;
   let peakContextWindow = 0;
 
   const modelStats: ModelStats[] = [];
@@ -115,12 +116,17 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     let cachedInputTokens = 0;
     let cacheCreationTokens = 0;
 
-    const usage = modelUsage[modelId];
-    if (usage) {
-      const usageInput = usage.inputTokens ?? 0;
-      const usageOutput = usage.outputTokens ?? 0;
-      const usageCacheRead = usage.cacheReadInputTokens ?? 0;
-      const usageCacheCreate = usage.cacheCreationInputTokens ?? 0;
+    const rawUsage = usageSummary.modelUsage.get(modelId);
+    const cacheUsage = modelUsage[modelId];
+    if (rawUsage || cacheUsage) {
+      const usageInput = rawUsage ? rawUsage.inputTokens : cacheUsage?.inputTokens ?? 0;
+      const usageOutput = rawUsage ? rawUsage.outputTokens : cacheUsage?.outputTokens ?? 0;
+      const usageCacheRead = rawUsage
+        ? rawUsage.cacheReadInputTokens
+        : cacheUsage?.cacheReadInputTokens ?? 0;
+      const usageCacheCreate = rawUsage
+        ? rawUsage.cacheCreationInputTokens
+        : cacheUsage?.cacheCreationInputTokens ?? 0;
       const usageTotal = usageInput + usageOutput + usageCacheRead + usageCacheCreate;
       if (usageTotal > 0) {
         const ratio = tokens / usageTotal;
@@ -140,8 +146,12 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
         totalCacheReadTokens += cachedInputTokens;
         totalCacheWriteTokens += cacheCreationTokens;
       }
-      totalWebSearchRequests += usage.webSearchRequests ?? 0;
-      peakContextWindow = Math.max(peakContextWindow, usage.contextWindow ?? 0);
+      if (!hasRawModelUsage) {
+        totalWebSearchRequests += cacheUsage?.webSearchRequests ?? 0;
+      }
+      if (!rawUsage) {
+        peakContextWindow = Math.max(peakContextWindow, cacheUsage?.contextWindow ?? 0);
+      }
     }
 
     if (!hasUsageSummaryTokens) {
