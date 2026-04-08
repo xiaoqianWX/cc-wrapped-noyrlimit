@@ -117,7 +117,9 @@ export async function collectClaudeProjects(year: number): Promise<Set<string>> 
   return projects;
 }
 
-export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsageSummary> {
+export type ModelFilter = (modelId: string | undefined) => boolean;
+
+export async function collectClaudeUsageSummary(year: number, modelFilter?: ModelFilter): Promise<ClaudeUsageSummary> {
   const roots = await getClaudeProjectRoots();
   const modelTokenTotals = new Map<string, number>();
   const modelUsage = new Map<string, ClaudeModelUsageSummary>();
@@ -187,6 +189,11 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
 
         const usage = entry?.message?.usage;
         const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
+
+        // When a model filter is active, skip entries that don't match
+        if (modelFilter && !modelFilter(model)) {
+          continue;
+        }
 
         const rawCost = entry?.costUSD;
         const hasCost = typeof rawCost === "number" && Number.isFinite(rawCost);

@@ -99,6 +99,11 @@ export interface ClaudeCodeStats {
 
   // Models (sorted by usage)
   topModels: ModelStats[];
+  allModels: ModelStats[];
+
+  // Third-party (only populated when -t flag is set)
+  thirdPartyModels?: ModelStats[];
+  thirdPartyFilter?: string | null;
 
   // Providers (sorted by usage)
   topProviders: ProviderStats[];
@@ -132,4 +137,6 @@ export interface WeekdayActivity {
 export interface CliArgs {
   year?: number;
   help?: boolean;
+  thirdParty?: boolean;
+  provider?: string;
 }

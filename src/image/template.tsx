@@ -2,6 +2,7 @@ import type { ClaudeCodeStats, WeekdayActivity } from "../types";
 import { formatNumberFull, formatCostFull, formatDate } from "../utils/format";
 import { ActivityHeatmap } from "./heatmap";
 import { colors, typography, spacing, layout, components } from "./design-tokens";
+import { getProviderLogoUrl, getProviderDisplayName } from "../models";
 import logo from "../../assets/images/claude-code-logo.svg" with { type: "text" };
 
 const CLAUDE_LOGO_DATA_URL = `data:image/svg+xml;base64,${Buffer.from(logo).toString("base64")}`;
@@ -100,12 +101,27 @@ export function WrappedTemplate({ stats }: { stats: ClaudeCodeStats }) {
           gap: spacing[16],
         }}
       >
-        <RankingList
-          title="Top Models"
-          items={stats.topModels.map((m) => ({
-            name: m.name,
-          }))}
-        />
+        {stats.thirdPartyModels && stats.thirdPartyModels.length > 0 ? (
+          <RankingList
+            title={
+              stats.thirdPartyFilter
+                ? `${getProviderDisplayName(stats.thirdPartyFilter)} Models`
+                : "Third-Party Models"
+            }
+            items={stats.thirdPartyModels.slice(0, 3).map((m) => ({
+              name: `${m.name} (${m.percentage.toFixed(1)}%)`,
+              logoUrl: getProviderLogoUrl(m.providerId),
+            }))}
+          />
+        ) : (
+          <RankingList
+            title="Top Models"
+            items={stats.topModels.map((m) => ({
+              name: m.name,
+              logoUrl: getProviderLogoUrl(m.providerId),
+            }))}
+          />
+        )}
         <InsightCard stats={stats} />
       </div>
 

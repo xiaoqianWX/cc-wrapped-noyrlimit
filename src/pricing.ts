@@ -9,6 +9,10 @@ export interface ModelPricing {
   outputCostPerTokenAbove200k: number | null;
 }
 
+import { THIRD_PARTY_PRICING, type ThirdPartyModelPricing } from "./pricing-data";
+
+const MILLION = 1_000_000;
+
 export interface TokenUsageTotals {
   inputTokens: number;
   cacheCreationTokens: number;
@@ -19,6 +23,22 @@ export interface TokenUsageTotals {
 const PRICING_URL =
   "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
 const DEFAULT_TIERED_THRESHOLD = 200_000;
+
+function convertThirdPartyPricing(p: ThirdPartyModelPricing): ModelPricing {
+  const input = (p.inputCostPerMToken ?? 0) / MILLION;
+  const cached = (p.cachedInputCostPerMToken ?? p.inputCostPerMToken ?? 0) / MILLION;
+  const output = (p.outputCostPerMToken ?? 0) / MILLION;
+  return {
+    inputCostPerToken: input,
+    inputCostPerTokenAbove200k: null,
+    cacheCreationCostPerToken: 0,
+    cacheCreationCostPerTokenAbove200k: null,
+    cachedInputCostPerToken: cached,
+    cachedInputCostPerTokenAbove200k: null,
+    outputCostPerToken: output,
+    outputCostPerTokenAbove200k: null,
+  };
+}
 
 const PROVIDER_PREFIXES = [
   "anthropic/",
@@ -42,6 +62,20 @@ const MODEL_ALIASES = new Map<string, string>([
 let cachedPricing: Map<string, any> | null = null;
 
 export async function getModelPricing(model: string): Promise<ModelPricing | null> {
+  // Check local third-party pricing first (exact match or longest prefix match)
+  if (THIRD_PARTY_PRICING[model]) {
+    return convertThirdPartyPricing(THIRD_PARTY_PRICING[model]);
+  }
+  // Sort by key length descending so longer/more-specific prefixes match first
+  const sortedEntries = Object.entries(THIRD_PARTY_PRICING).sort(
+    (a, b) => b[0].length - a[0].length
+  );
+  for (const [key, pricing] of sortedEntries) {
+    if (model.startsWith(key)) {
+      return convertThirdPartyPricing(pricing);
+    }
+  }
+
   const pricing = await loadPricingDataset();
   if (!pricing || pricing.size === 0) return null;
 

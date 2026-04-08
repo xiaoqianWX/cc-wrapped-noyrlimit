@@ -1,13 +1,14 @@
 import type { ClaudeCodeStats, ModelStats, ProviderStats, WeekdayActivity } from "./types";
-import { collectClaudeProjects, collectClaudeUsageSummary, loadClaudeStatsCache } from "./collector";
+import { collectClaudeProjects, collectClaudeUsageSummary, loadClaudeStatsCache, type ModelFilter } from "./collector";
 import { fetchModelsData, getModelDisplayName, getModelProvider, getProviderDisplayName } from "./models";
+import { resolveThirdPartyProvider, isThirdPartyModel } from "./providers";
 
-export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
+export async function calculateStats(year: number, modelFilter?: ModelFilter): Promise<ClaudeCodeStats> {
   const [, statsCache, projects, usageSummary] = await Promise.all([
     fetchModelsData(),
     loadClaudeStatsCache(),
     collectClaudeProjects(year),
-    collectClaudeUsageSummary(year),
+    collectClaudeUsageSummary(year, modelFilter),
   ]);
 
   const dailyActivity = new Map<string, number>();
@@ -171,13 +172,14 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     });
   }
 
-  const topModels = modelStats
+  const allModels = modelStats
     .sort((a, b) => b.count - a.count)
-    .slice(0, 3)
     .map((model) => ({
       ...model,
       percentage: totalTokens > 0 ? (model.count / totalTokens) * 100 : 0,
     }));
+
+  const topModels = allModels.slice(0, 3);
 
   const topProviders: ProviderStats[] = Array.from(providerCounts.entries())
     .sort((a, b) => b[1] - a[1])
@@ -223,6 +225,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     totalCost,
     hasUsageCost: totalCost > 0,
     topModels,
+    allModels,
     topProviders,
     maxStreak,
     currentStreak,
@@ -239,6 +242,9 @@ function resolveProviderId(modelId: string): string {
 
   if (modelId.startsWith("claude")) return "anthropic";
   if (modelId.startsWith("gpt") || modelId.startsWith("openai")) return "openai";
+
+  const thirdParty = resolveThirdPartyProvider(modelId);
+  if (thirdParty) return thirdParty.key;
 
   return "unknown";
 }

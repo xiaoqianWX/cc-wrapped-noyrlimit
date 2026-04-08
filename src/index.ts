@@ -11,7 +11,9 @@ import { displayInTerminal, getTerminalName } from "./terminal/display";
 import { copyImageToClipboard } from "./clipboard";
 import { isWrappedAvailable } from "./utils/dates";
 import { formatCostFull, formatNumber, formatNumberFull } from "./utils/format";
+import { filterModelsByProvider, getThirdPartyProviderNames, isThirdPartyModel, resolveThirdPartyProvider } from "./providers";
 import type { ClaudeCodeStats } from "./types";
+import type { ModelFilter } from "./collector";
 
 const VERSION = "1.0.2";
 
@@ -25,13 +27,18 @@ USAGE:
   cc-wrapped [OPTIONS]
 
 OPTIONS:
-  --year <YYYY>    Generate wrapped for a specific year (default: current year)
-  --help, -h       Show this help message
-  --version, -v    Show version number
+  --year <YYYY>         Generate wrapped for a specific year (default: current year)
+  --third-party, -t     Include third-party model stats (non-Anthropic)
+  --provider <key>      Filter to a specific third-party provider (requires -t)
+                        Available providers: ${getThirdPartyProviderNames().join(", ")}
+  --help, -h            Show this help message
+  --version, -v         Show version number
 
 EXAMPLES:
-  cc-wrapped              # Generate current year wrapped
-  cc-wrapped --year 2025  # Generate 2025 wrapped
+  cc-wrapped                        # Generate current year wrapped
+  cc-wrapped --year 2025            # Generate 2025 wrapped
+  cc-wrapped -t                     # Include third-party model stats
+  cc-wrapped -t --provider zhipu    # Show only Zhipu AI (GLM) model stats
 `);
 }
 
@@ -41,6 +48,8 @@ async function main() {
     args: process.argv.slice(2),
     options: {
       year: { type: "string", short: "y" },
+      "third-party": { type: "boolean", short: "t" },
+      provider: { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
     },
@@ -62,6 +71,23 @@ async function main() {
 
   const requestedYear = values.year ? parseInt(values.year, 10) : new Date().getFullYear();
 
+  // Validate third-party flags
+  const thirdParty = values["third-party"];
+  const providerFilter = values.provider;
+
+  if (providerFilter && !thirdParty) {
+    p.cancel("--provider requires --third-party (-t)");
+    process.exit(0);
+  }
+
+  if (providerFilter) {
+    const validProviders = getThirdPartyProviderNames();
+    if (!validProviders.includes(providerFilter)) {
+      p.cancel(`Unknown provider "${providerFilter}". Available: ${validProviders.join(", ")}`);
+      process.exit(0);
+    }
+  }
+
   const availability = isWrappedAvailable(requestedYear);
   if (!availability.available) {
     if (Array.isArray(availability.message)) {
@@ -82,9 +108,22 @@ async function main() {
   const spinner = p.spinner();
   spinner.start("Scanning your Claude Code history...");
 
+  // Build model filter if third-party flag is set
+  let modelFilter: ModelFilter | undefined;
+  if (thirdParty) {
+    modelFilter = (modelId: string | undefined) => {
+      if (!modelId) return false;
+      if (providerFilter) {
+        const provider = resolveThirdPartyProvider(modelId);
+        return provider?.key === providerFilter;
+      }
+      return isThirdPartyModel(modelId);
+    };
+  }
+
   let stats;
   try {
-    stats = await calculateStats(requestedYear);
+    stats = await calculateStats(requestedYear, modelFilter);
   } catch (error) {
     spinner.stop("Failed to collect stats");
     p.cancel(`Error: ${error}`);
@@ -98,6 +137,12 @@ async function main() {
   }
 
   spinner.stop("Found your stats!");
+
+  // Mark third-party mode for template rendering
+  if (thirdParty) {
+    stats.thirdPartyModels = stats.allModels.length > 0 ? stats.allModels : [];
+    stats.thirdPartyFilter = providerFilter ?? null;
+  }
 
   if (!stats.hasUsageCost) {
     p.log.warn(
