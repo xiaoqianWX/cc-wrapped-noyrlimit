@@ -13,8 +13,13 @@ export interface GeneratedImage {
   displaySize: Buffer;
 }
 
+let wasmInitialized = false;
+
 export async function generateImage(stats: ClaudeCodeStats): Promise<GeneratedImage> {
-  await initWasm(Bun.file(resvgWasm).arrayBuffer());
+  if (!wasmInitialized) {
+    await initWasm(Bun.file(resvgWasm).arrayBuffer());
+    wasmInitialized = true;
+  }
 
   const svg = await satori(<WrappedTemplate stats={stats} />, {
     width: layout.canvas.width,

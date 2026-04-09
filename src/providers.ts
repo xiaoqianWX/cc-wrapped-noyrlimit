@@ -14,7 +14,8 @@ export const THIRD_PARTY_PROVIDERS: ThirdPartyProvider[] = [
   },
 ];
 
-export function resolveThirdPartyProvider(modelId: string): ThirdPartyProvider | null {
+export function resolveThirdPartyProvider(modelId: string | undefined): ThirdPartyProvider | null {
+  if (!modelId) return null;
   const lower = modelId.toLowerCase();
   for (const provider of THIRD_PARTY_PROVIDERS) {
     if (provider.modelPrefixes.some((prefix) => lower.startsWith(prefix))) {
@@ -24,7 +25,7 @@ export function resolveThirdPartyProvider(modelId: string): ThirdPartyProvider |
   return null;
 }
 
-export function isThirdPartyModel(modelId: string): boolean {
+export function isThirdPartyModel(modelId: string | undefined): boolean {
   return resolveThirdPartyProvider(modelId) !== null;
 }
 

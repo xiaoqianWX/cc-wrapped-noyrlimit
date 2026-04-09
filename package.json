@@ -32,7 +32,8 @@
     "build": "tsgo --noEmit && bun run scripts/build.ts",
     "publish": "bun run scripts/publish.ts",
     "release": "semantic-release",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "bun test --timeout 60000"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
