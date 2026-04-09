@@ -178,6 +178,14 @@ export async function collectClaudeUsageSummary(year: number, modelFilter?: Mode
           firstTimestamp = entryDate;
         }
 
+        const usage = entry?.message?.usage;
+        const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
+
+        // When a model filter is active, skip entries that don't match
+        if (modelFilter && !modelFilter(model)) {
+          continue;
+        }
+
         const dateKey = formatDateKey(entryDate);
         dailyActivity.set(dateKey, (dailyActivity.get(dateKey) || 0) + 1);
         totalMessages += 1;
@@ -185,14 +193,6 @@ export async function collectClaudeUsageSummary(year: number, modelFilter?: Mode
         const sessionId = typeof entry?.sessionId === "string" ? entry.sessionId : undefined;
         if (sessionId) {
           sessionIds.add(sessionId);
-        }
-
-        const usage = entry?.message?.usage;
-        const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
-
-        // When a model filter is active, skip entries that don't match
-        if (modelFilter && !modelFilter(model)) {
-          continue;
         }
 
         const rawCost = entry?.costUSD;
