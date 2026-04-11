@@ -124,20 +124,16 @@ export async function collectClaudeUsageSummary(year: number, modelFilter?: Mode
   const modelTokenTotals = new Map<string, number>();
   const modelUsage = new Map<string, ClaudeModelUsageSummary>();
   const pricingCache = new Map<string, ModelPricing | null>();
-  const processedHashes = new Set<string>();
+  const latestEntries = new Map<string, any>();
   const dailyActivity = new Map<string, number>();
   const sessionIds = new Set<string>();
 
-  let totalInputTokens = 0;
-  let totalOutputTokens = 0;
-  let totalCacheCreationTokens = 0;
-  let totalCacheReadTokens = 0;
-  let totalTokens = 0;
-  let totalCostUSD = 0;
   let firstTimestamp: Date | null = null;
-  let totalMessages = 0;
-  let totalWebSearchRequests = 0;
 
+  // Pass 1: collect entries, keeping only the last occurrence per dedup key.
+  // Claude Code emits multiple JSONL records per streaming API response, all
+  // sharing the same message.id.  Only the LAST record has the final token
+  // tallies — earlier ones hold partial/incorrect values.
   for (const root of roots) {
     const exists = await pathIsDirectory(root);
     if (!exists) continue;
@@ -159,14 +155,6 @@ export async function collectClaudeUsageSummary(year: number, modelFilter?: Mode
           continue;
         }
 
-        const uniqueHash = createUniqueHash(entry);
-        if (uniqueHash && processedHashes.has(uniqueHash)) {
-          continue;
-        }
-        if (uniqueHash) {
-          processedHashes.add(uniqueHash);
-        }
-
         const timestamp = entry?.timestamp;
         if (!timestamp) continue;
         const entryDate = new Date(timestamp);
@@ -174,84 +162,104 @@ export async function collectClaudeUsageSummary(year: number, modelFilter?: Mode
           continue;
         }
 
+        const uniqueHash = createUniqueHash(entry);
+        if (uniqueHash) {
+          latestEntries.set(uniqueHash, entry); // last wins
+        } else {
+          // Entries without a hash get a unique key so they're never overwritten
+          latestEntries.set(`__nohash__${latestEntries.size}`, entry);
+        }
+
         if (firstTimestamp == null || entryDate < firstTimestamp) {
           firstTimestamp = entryDate;
         }
+      }
+    }
+  }
 
-        const usage = entry?.message?.usage;
-        const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
+  // Pass 2: accumulate totals from deduplicated entries
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCacheCreationTokens = 0;
+  let totalCacheReadTokens = 0;
+  let totalTokens = 0;
+  let totalCostUSD = 0;
+  let totalMessages = 0;
+  let totalWebSearchRequests = 0;
 
-        // When a model filter is active, skip entries that don't match
-        if (modelFilter && !modelFilter(model)) {
-          continue;
+  for (const entry of latestEntries.values()) {
+    const usage = entry?.message?.usage;
+    const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
+
+    if (modelFilter && !modelFilter(model)) {
+      continue;
+    }
+
+    const entryDate = new Date(entry.timestamp);
+    const dateKey = formatDateKey(entryDate);
+    dailyActivity.set(dateKey, (dailyActivity.get(dateKey) || 0) + 1);
+    totalMessages += 1;
+
+    const sessionId = typeof entry?.sessionId === "string" ? entry.sessionId : undefined;
+    if (sessionId) {
+      sessionIds.add(sessionId);
+    }
+
+    const rawCost = entry?.costUSD;
+    const hasCost = typeof rawCost === "number" && Number.isFinite(rawCost);
+    if (hasCost) {
+      totalCostUSD += rawCost;
+    }
+
+    if (!usage) continue;
+
+    const input = ensureNumber(usage.input_tokens);
+    const output = ensureNumber(usage.output_tokens);
+    const cacheCreate = ensureNumber(usage.cache_creation_input_tokens);
+    const cacheRead = ensureNumber(usage.cache_read_input_tokens);
+    const webSearchRequests = ensureNumber(usage.server_tool_use?.web_search_requests);
+    const entryTotal = input + output + cacheCreate + cacheRead;
+
+    totalInputTokens += input;
+    totalOutputTokens += output;
+    totalCacheCreationTokens += cacheCreate;
+    totalCacheReadTokens += cacheRead;
+    totalTokens += entryTotal;
+    totalWebSearchRequests += webSearchRequests;
+
+    if (typeof model === "string" && model.trim() !== "") {
+      modelTokenTotals.set(model, (modelTokenTotals.get(model) || 0) + entryTotal);
+      const currentModelUsage = modelUsage.get(model) ?? {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        webSearchRequests: 0,
+      };
+      currentModelUsage.inputTokens += input;
+      currentModelUsage.outputTokens += output;
+      currentModelUsage.cacheReadInputTokens += cacheRead;
+      currentModelUsage.cacheCreationInputTokens += cacheCreate;
+      currentModelUsage.webSearchRequests += webSearchRequests;
+      modelUsage.set(model, currentModelUsage);
+
+      if (!hasCost && entryTotal > 0) {
+        let pricing = pricingCache.get(model);
+        if (!pricingCache.has(model)) {
+          pricing = await getModelPricing(model);
+          pricingCache.set(model, pricing ?? null);
         }
 
-        const dateKey = formatDateKey(entryDate);
-        dailyActivity.set(dateKey, (dailyActivity.get(dateKey) || 0) + 1);
-        totalMessages += 1;
-
-        const sessionId = typeof entry?.sessionId === "string" ? entry.sessionId : undefined;
-        if (sessionId) {
-          sessionIds.add(sessionId);
-        }
-
-        const rawCost = entry?.costUSD;
-        const hasCost = typeof rawCost === "number" && Number.isFinite(rawCost);
-        if (hasCost) {
-          totalCostUSD += rawCost;
-        }
-
-        if (!usage) continue;
-
-        const input = ensureNumber(usage.input_tokens);
-        const output = ensureNumber(usage.output_tokens);
-        const cacheCreate = ensureNumber(usage.cache_creation_input_tokens);
-        const cacheRead = ensureNumber(usage.cache_read_input_tokens);
-        const webSearchRequests = ensureNumber(usage.server_tool_use?.web_search_requests);
-        const entryTotal = input + output + cacheCreate + cacheRead;
-
-        totalInputTokens += input;
-        totalOutputTokens += output;
-        totalCacheCreationTokens += cacheCreate;
-        totalCacheReadTokens += cacheRead;
-        totalTokens += entryTotal;
-        totalWebSearchRequests += webSearchRequests;
-
-        if (typeof model === "string" && model.trim() !== "") {
-          modelTokenTotals.set(model, (modelTokenTotals.get(model) || 0) + entryTotal);
-          const currentModelUsage = modelUsage.get(model) ?? {
-            inputTokens: 0,
-            outputTokens: 0,
-            cacheReadInputTokens: 0,
-            cacheCreationInputTokens: 0,
-            webSearchRequests: 0,
-          };
-          currentModelUsage.inputTokens += input;
-          currentModelUsage.outputTokens += output;
-          currentModelUsage.cacheReadInputTokens += cacheRead;
-          currentModelUsage.cacheCreationInputTokens += cacheCreate;
-          currentModelUsage.webSearchRequests += webSearchRequests;
-          modelUsage.set(model, currentModelUsage);
-
-          if (!hasCost && entryTotal > 0) {
-            let pricing = pricingCache.get(model);
-            if (!pricingCache.has(model)) {
-              pricing = await getModelPricing(model);
-              pricingCache.set(model, pricing ?? null);
-            }
-
-            if (pricing) {
-              totalCostUSD += calculateCostUSD(
-                {
-                  inputTokens: input,
-                  outputTokens: output,
-                  cacheCreationTokens: cacheCreate,
-                  cachedInputTokens: cacheRead,
-                },
-                pricing
-              );
-            }
-          }
+        if (pricing) {
+          totalCostUSD += calculateCostUSD(
+            {
+              inputTokens: input,
+              outputTokens: output,
+              cacheCreationTokens: cacheCreate,
+              cachedInputTokens: cacheRead,
+            },
+            pricing
+          );
         }
       }
     }
