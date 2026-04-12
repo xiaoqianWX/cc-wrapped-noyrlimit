@@ -46,11 +46,11 @@ export interface ClaudeModelUsageSummary {
 }
 
 const CLAUDE_DATA_PATH = join(os.homedir(), ".claude");
-const CLAUDE_STATS_CACHE_PATH = join(CLAUDE_DATA_PATH, "stats-cache.json");
-const CLAUDE_HISTORY_PATH = join(CLAUDE_DATA_PATH, "history.jsonl");
 const CLAUDE_PROJECTS_DIR = "projects";
 const CLAUDE_CONFIG_PATH = join(os.homedir(), ".config", "claude");
 const CLAUDE_CONFIG_DIR_ENV = "CLAUDE_CONFIG_DIR";
+const CLAUDE_STATS_CACHE_FILENAME = "stats-cache.json";
+const CLAUDE_HISTORY_FILENAME = "history.jsonl";
 
 export interface ClaudeUsageSummary {
   totalInputTokens: number;
@@ -69,21 +69,18 @@ export interface ClaudeUsageSummary {
 }
 
 export async function checkClaudeDataExists(): Promise<boolean> {
-  try {
-    await readFile(CLAUDE_STATS_CACHE_PATH);
-    return true;
-  } catch {
-    const [roots, historyExists] = await Promise.all([
-      getClaudeProjectRoots(),
-      pathExists(CLAUDE_HISTORY_PATH),
-    ]);
-    return roots.length > 0 || historyExists;
-  }
+  const paths = await getClaudePaths();
+  const [statsCacheExists, historyExists] = await Promise.all([
+    pathExists(paths.statsCachePath),
+    pathExists(paths.historyPath),
+  ]);
+  return statsCacheExists || paths.projectRoots.length > 0 || historyExists;
 }
 
 export async function loadClaudeStatsCache(): Promise<ClaudeStatsCache> {
+  const paths = await getClaudePaths();
   try {
-    const raw = await readFile(CLAUDE_STATS_CACHE_PATH, "utf8");
+    const raw = await readFile(paths.statsCachePath, "utf8");
     return {
       ...createEmptyStatsCache(),
       ...(JSON.parse(raw) as ClaudeStatsCache),
@@ -95,9 +92,10 @@ export async function loadClaudeStatsCache(): Promise<ClaudeStatsCache> {
 
 export async function collectClaudeProjects(year: number): Promise<Set<string>> {
   const projects = new Set<string>();
+  const paths = await getClaudePaths();
 
   try {
-    const raw = await readFile(CLAUDE_HISTORY_PATH, "utf8");
+    const raw = await readFile(paths.historyPath, "utf8");
     for (const line of raw.split("\n")) {
       if (!line.trim()) continue;
       try {
@@ -118,7 +116,7 @@ export async function collectClaudeProjects(year: number): Promise<Set<string>> 
 }
 
 export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsageSummary> {
-  const roots = await getClaudeProjectRoots();
+  const { projectRoots: roots } = await getClaudePaths();
   const modelTokenTotals = new Map<string, number>();
   const modelUsage = new Map<string, ClaudeModelUsageSummary>();
   const pricingCache = new Map<string, ModelPricing | null>();
@@ -292,35 +290,74 @@ function createUniqueHash(entry: any): string | null {
 }
 
 async function getClaudeProjectRoots(): Promise<string[]> {
-  const normalizedPaths = new Set<string>();
-  const roots: string[] = [];
+  const { projectRoots } = await getClaudePaths();
+  return projectRoots;
+}
 
-  const envPaths = (process.env[CLAUDE_CONFIG_DIR_ENV] ?? "").trim();
-  if (envPaths !== "") {
-    const entries = envPaths.split(",").map((value) => value.trim()).filter((value) => value !== "");
-    for (const entry of entries) {
-      const resolved = resolve(entry);
-      const projectsPath = join(resolved, CLAUDE_PROJECTS_DIR);
-      if (await pathIsDirectory(projectsPath)) {
-        const canonical = await resolveCanonicalPath(projectsPath);
-        if (normalizedPaths.has(canonical)) continue;
-        normalizedPaths.add(canonical);
-        roots.push(canonical);
-      }
-    }
-    return roots;
+interface ClaudePaths {
+  projectRoots: string[];
+  statsCachePath: string;
+  historyPath: string;
+}
+
+async function getClaudePaths(): Promise<ClaudePaths> {
+  const baseCandidates = getClaudeBaseCandidates();
+  const existingBases = await getExistingCanonicalDirs(baseCandidates);
+  const metadataBase = existingBases[0] ?? baseCandidates[0] ?? resolve(CLAUDE_CONFIG_PATH);
+  const projectRoots = await getCanonicalProjectRoots(existingBases);
+
+  return {
+    projectRoots,
+    statsCachePath: join(metadataBase, CLAUDE_STATS_CACHE_FILENAME),
+    historyPath: join(metadataBase, CLAUDE_HISTORY_FILENAME),
+  };
+}
+
+function getClaudeBaseCandidates(): string[] {
+  const configuredPaths = (process.env[CLAUDE_CONFIG_DIR_ENV] ?? "").trim();
+  const entries = configuredPaths !== ""
+    ? configuredPaths.split(",")
+    : [CLAUDE_CONFIG_PATH, CLAUDE_DATA_PATH];
+
+  const deduped = new Set<string>();
+  const resolvedPaths: string[] = [];
+
+  for (const entry of entries.map((value) => value.trim()).filter((value) => value !== "")) {
+    const resolved = resolve(entry);
+    if (deduped.has(resolved)) continue;
+    deduped.add(resolved);
+    resolvedPaths.push(resolved);
   }
 
-  const defaults = [CLAUDE_CONFIG_PATH, CLAUDE_DATA_PATH];
-  for (const base of defaults) {
-    const resolved = resolve(base);
-    const projectsPath = join(resolved, CLAUDE_PROJECTS_DIR);
-    if (await pathIsDirectory(projectsPath)) {
-      const canonical = await resolveCanonicalPath(projectsPath);
-      if (normalizedPaths.has(canonical)) continue;
-      normalizedPaths.add(canonical);
-      roots.push(canonical);
-    }
+  return resolvedPaths;
+}
+
+async function getExistingCanonicalDirs(paths: string[]): Promise<string[]> {
+  const deduped = new Set<string>();
+  const existing: string[] = [];
+
+  for (const path of paths) {
+    if (!(await pathIsDirectory(path))) continue;
+    const canonical = await resolveCanonicalPath(path);
+    if (deduped.has(canonical)) continue;
+    deduped.add(canonical);
+    existing.push(canonical);
+  }
+
+  return existing;
+}
+
+async function getCanonicalProjectRoots(baseDirs: string[]): Promise<string[]> {
+  const deduped = new Set<string>();
+  const roots: string[] = [];
+
+  for (const baseDir of baseDirs) {
+    const projectsPath = join(baseDir, CLAUDE_PROJECTS_DIR);
+    if (!(await pathIsDirectory(projectsPath))) continue;
+    const canonical = await resolveCanonicalPath(projectsPath);
+    if (deduped.has(canonical)) continue;
+    deduped.add(canonical);
+    roots.push(canonical);
   }
 
   return roots;

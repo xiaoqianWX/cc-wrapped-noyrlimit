@@ -53,15 +53,6 @@ export async function getModelPricing(model: string): Promise<ModelPricing | nul
     }
   }
 
-  // Fallback: try substring match (best-effort)
-  const lower = model.toLowerCase();
-  for (const [key, value] of pricing.entries()) {
-    const cmp = key.toLowerCase();
-    if (cmp.includes(lower) || lower.includes(cmp)) {
-      return normalizePricing(value);
-    }
-  }
-
   return null;
 }
 
@@ -182,3 +173,9 @@ function calculateTieredCost(
 
   return 0;
 }
+
+export const __testing = {
+  resetPricingCache(): void {
+    cachedPricing = null;
+  },
+};

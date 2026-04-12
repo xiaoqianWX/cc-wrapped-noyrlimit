@@ -120,3 +120,9 @@ function formatModelIdAsName(modelId: string): string {
     })
     .join(" ");
 }
+
+export const __testing = {
+  resetModelsCache(): void {
+    cachedData = null;
+  },
+};
