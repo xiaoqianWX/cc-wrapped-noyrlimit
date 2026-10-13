@@ -186,12 +186,12 @@ export function freezeTime(isoTimestamp: string): () => void {
   const fixedTime = new RealDate(isoTimestamp).getTime();
 
   class MockDate extends RealDate {
-    constructor(...args: ConstructorParameters<typeof RealDate>) {
+    constructor(...args: [] | ConstructorParameters<typeof RealDate>) {
       if (args.length === 0) {
         super(fixedTime);
         return;
       }
-      super(...args);
+      super(...(args as ConstructorParameters<typeof RealDate>));
     }
 
     static now(): number {

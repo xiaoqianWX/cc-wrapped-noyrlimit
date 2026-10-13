@@ -1,3 +1,6 @@
+import { LOCAL_MODEL_PRICING, type LocalModelRates } from "./pricing-data";
+import { normalizeModelId } from "./models";
+
 export interface ModelPricing {
   inputCostPerToken: number;
   inputCostPerTokenAbove200k: number | null;
@@ -7,6 +10,15 @@ export interface ModelPricing {
   cachedInputCostPerTokenAbove200k: number | null;
   outputCostPerToken: number;
   outputCostPerTokenAbove200k: number | null;
+  longContextPricing?: RequestTierPricing;
+}
+
+export interface RequestTierPricing {
+  promptTokenThreshold: number;
+  inputCostPerToken: number;
+  cacheCreationCostPerToken: number;
+  cachedInputCostPerToken: number;
+  outputCostPerToken: number;
 }
 
 export interface TokenUsageTotals {
@@ -19,6 +31,7 @@ export interface TokenUsageTotals {
 const PRICING_URL =
   "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
 const DEFAULT_TIERED_THRESHOLD = 200_000;
+const MILLION = 1_000_000;
 
 const PROVIDER_PREFIXES = [
   "anthropic/",
@@ -42,10 +55,14 @@ const MODEL_ALIASES = new Map<string, string>([
 let cachedPricing: Map<string, any> | null = null;
 
 export async function getModelPricing(model: string): Promise<ModelPricing | null> {
+  const normalizedModel = normalizeModelId(model);
+  const local = findLocalPricing(normalizedModel);
+  if (local) return local;
+
   const pricing = await loadPricingDataset();
   if (!pricing || pricing.size === 0) return null;
 
-  const candidates = createCandidates(model);
+  const candidates = createCandidates(normalizedModel);
   for (const candidate of candidates) {
     const record = pricing.get(candidate);
     if (record) {
@@ -61,6 +78,18 @@ export function calculateCostUSD(usage: TokenUsageTotals, pricing: ModelPricing)
   const outputTokens = Math.max(usage.outputTokens, 0);
   const cacheCreationTokens = Math.max(usage.cacheCreationTokens, 0);
   const cacheReadTokens = Math.max(usage.cachedInputTokens, 0);
+
+  const longContext = pricing.longContextPricing;
+  if (longContext) {
+    const promptTokens = inputTokens + cacheCreationTokens + cacheReadTokens;
+    const rates = promptTokens > longContext.promptTokenThreshold ? longContext : pricing;
+    return (
+      inputTokens * rates.inputCostPerToken +
+      outputTokens * rates.outputCostPerToken +
+      cacheCreationTokens * rates.cacheCreationCostPerToken +
+      cacheReadTokens * rates.cachedInputCostPerToken
+    );
+  }
 
   const inputCost = calculateTieredCost(
     inputTokens,
@@ -102,6 +131,36 @@ async function loadPricingDataset(): Promise<Map<string, any>> {
   } catch {
     return new Map();
   }
+}
+
+function findLocalPricing(model: string): ModelPricing | null {
+  const baseModel = model.replace(/^anthropic\//, "").replace(/-\d{8}$/, "");
+  const record = LOCAL_MODEL_PRICING[baseModel];
+  if (!record) return null;
+
+  const pricing: ModelPricing = {
+    ...toPerTokenRates(record),
+    inputCostPerTokenAbove200k: null,
+    cacheCreationCostPerTokenAbove200k: null,
+    cachedInputCostPerTokenAbove200k: null,
+    outputCostPerTokenAbove200k: null,
+  };
+  if (record.longContextPricing) {
+    pricing.longContextPricing = {
+      promptTokenThreshold: record.longContextPricing.promptTokenThreshold,
+      ...toPerTokenRates(record.longContextPricing),
+    };
+  }
+  return pricing;
+}
+
+function toPerTokenRates(rates: LocalModelRates) {
+  return {
+    inputCostPerToken: rates.inputCostPerMToken / MILLION,
+    cacheCreationCostPerToken: rates.cacheWriteCostPerMToken / MILLION,
+    cachedInputCostPerToken: rates.cacheReadCostPerMToken / MILLION,
+    outputCostPerToken: rates.outputCostPerMToken / MILLION,
+  };
 }
 
 function createCandidates(model: string): string[] {

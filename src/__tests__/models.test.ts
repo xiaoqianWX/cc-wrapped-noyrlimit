@@ -6,6 +6,7 @@ import {
   getModelProvider,
   getProviderDisplayName,
   getProviderLogoUrl,
+  normalizeModelId,
 } from "../models";
 import { MODELS_DEV_URL, installFetchMock, jsonResponse } from "./helpers";
 
@@ -84,7 +85,15 @@ describe("models metadata", () => {
 
     await expect(fetchModelsData()).resolves.toEqual({ models: {}, providers: {} });
     expect(getModelDisplayName("claude-sonnet-4")).toBe("Claude Sonnet 4");
+    expect(getModelDisplayName("claude-opus-5-5")).toBe("Claude Opus 5.5");
+    expect(getModelDisplayName("claude-haiku-4-5-20251001")).toBe("Claude Haiku 4.5");
+    expect(getModelDisplayName("claude-3-5-sonnet")).toBe("Claude 3.5 Sonnet");
     expect(getModelProvider("claude-sonnet-4")).toBe("unknown");
     expect(getProviderDisplayName("custom-provider")).toBe("Custom-provider");
+  });
+
+  test("normalizes context-window variant suffixes", () => {
+    expect(normalizeModelId("claude-opus-5-5[1m]")).toBe("claude-opus-5-5");
+    expect(normalizeModelId("claude-sonnet-5-5")).toBe("claude-sonnet-5-5");
   });
 });

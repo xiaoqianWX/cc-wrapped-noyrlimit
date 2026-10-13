@@ -99,9 +99,51 @@ describe("getModelPricing", () => {
 
     await expect(getModelPricing("gpt-4o")).resolves.toBeNull();
   });
+
+  test.each([
+    ["claude-fable-5-1", [10, 12.5, 0.25, 50]],
+    ["claude-opus-5-5", [4, 5, 0.2, 20]],
+    ["claude-opus-5-5[1m]", [4, 5, 0.2, 20]],
+    ["claude-opus-5", [5, 6.25, 0.5, 25]],
+    ["claude-sonnet-5-5", [2, 2.5, 0.1, 10]],
+    ["claude-sonnet-5", [2, 2.5, 0.2, 10]],
+    ["claude-haiku-5-5", [0.1, 0.125, 0.01, 0.5]],
+    ["claude-haiku-4-5-20251001", [1, 1.25, 0.1, 5]],
+  ])("prices %s from the local table without fetching", async (model, rates) => {
+    registerCleanup(
+      installFetchMock(() => {
+        throw new Error("local pricing should not fetch");
+      })
+    );
+
+    const pricing = await getModelPricing(model);
+    const [input, cacheWrite, cacheRead, output] = rates.map((rate) => rate / 1_000_000);
+
+    expect(pricing?.inputCostPerToken).toBeCloseTo(input, 15);
+    expect(pricing?.cacheCreationCostPerToken).toBeCloseTo(cacheWrite, 15);
+    expect(pricing?.cachedInputCostPerToken).toBeCloseTo(cacheRead, 15);
+    expect(pricing?.outputCostPerToken).toBeCloseTo(output, 15);
+  });
 });
 
 describe("calculateCostUSD", () => {
+  test("bills a whole Haiku 5.5 request at the higher rates once its prompt exceeds 100K", async () => {
+    const pricing = await getModelPricing("claude-haiku-5-5");
+    if (!pricing) throw new Error("missing Haiku 5.5 pricing");
+
+    const atThreshold = calculateCostUSD(
+      { inputTokens: 10_000, cacheCreationTokens: 10_000, cachedInputTokens: 80_000, outputTokens: 1_000 },
+      pricing
+    );
+    const overThreshold = calculateCostUSD(
+      { inputTokens: 10_001, cacheCreationTokens: 10_000, cachedInputTokens: 80_000, outputTokens: 1_000 },
+      pricing
+    );
+
+    expect(atThreshold).toBeCloseTo((10_000 * 0.1 + 10_000 * 0.125 + 80_000 * 0.01 + 1_000 * 0.5) / 1e6, 12);
+    expect(overThreshold).toBeCloseTo((10_001 * 0.5 + 10_000 * 0.625 + 80_000 * 0.05 + 1_000 * 2.5) / 1e6, 12);
+  });
+
   test("applies 200k tier thresholds independently per token bucket", () => {
     const pricing: ModelPricing = {
       inputCostPerToken: 1,

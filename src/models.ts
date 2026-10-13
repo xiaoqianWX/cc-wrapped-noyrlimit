@@ -72,6 +72,12 @@ export async function fetchModelsData(): Promise<ModelsDevData> {
   }
 }
 
+// Claude Code tags context-window variants as e.g. `claude-opus-5-5[1m]`; they bill and
+// display as the base model.
+export function normalizeModelId(modelId: string): string {
+  return modelId.trim().replace(/\[[^\]]*\]$/, "");
+}
+
 export function getModelDisplayName(modelId: string): string {
   if (!cachedData) {
     console.warn("Models data not prefetched, using fallback formatting");
@@ -111,14 +117,17 @@ export function getProviderLogoUrl(providerId: string): string {
 }
 
 function formatModelIdAsName(modelId: string): string {
-  return modelId
-    .split(/[-_]/)
-    .map((part) => {
-      if (/^\d/.test(part)) return part;
-
-      return part.charAt(0).toUpperCase() + part.slice(1);
-    })
-    .join(" ");
+  const words: string[] = [];
+  for (const part of modelId.replace(/-\d{8}$/, "").split(/[-_]/)) {
+    const previous = words[words.length - 1];
+    // Join version segments: claude-opus-5-5 -> "Claude Opus 5.5"
+    if (/^\d{1,2}$/.test(part) && previous && /^\d+(\.\d+)*$/.test(previous)) {
+      words[words.length - 1] = `${previous}.${part}`;
+      continue;
+    }
+    words.push(/^\d/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1));
+  }
+  return words.join(" ");
 }
 
 export const __testing = {

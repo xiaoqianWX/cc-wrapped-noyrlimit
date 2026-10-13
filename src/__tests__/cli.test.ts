@@ -68,7 +68,7 @@ describe("CLI smoke paths", () => {
     const result = await runCli(["--version"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.output.trim()).toBe("cc-wrapped v1.0.2");
+    expect(result.output.trim()).toBe("cc-wrapped v1.0.3");
   });
 
   test("rejects wrapped requests for a future year before reading local data", async () => {

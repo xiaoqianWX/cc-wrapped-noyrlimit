@@ -5,6 +5,7 @@ import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import os from "node:os";
 import { createInterface } from "node:readline";
+import { normalizeModelId } from "./models";
 import { calculateCostUSD, getModelPricing, type ModelPricing } from "./pricing";
 
 export interface ClaudeStatsCache {
@@ -195,7 +196,8 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     }
 
     const usage = entry?.message?.usage;
-    const model = typeof entry?.message?.model === "string" ? entry.message.model : undefined;
+    const model =
+      typeof entry?.message?.model === "string" ? normalizeModelId(entry.message.model) : undefined;
 
     const rawCost = entry?.costUSD;
     const hasCost = typeof rawCost === "number" && Number.isFinite(rawCost);
