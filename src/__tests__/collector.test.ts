@@ -107,6 +107,7 @@ describe("collectClaudeUsageSummary", () => {
                 model: "claude-sonnet-4",
                 inputTokens: 1,
                 outputTokens: 1,
+                reasoningTokens: 1,
               }),
               makeUsageEntry({
                 timestamp: "2025-01-10T10:00:00Z",
@@ -116,6 +117,7 @@ describe("collectClaudeUsageSummary", () => {
                 model: "claude-sonnet-4",
                 inputTokens: 10,
                 outputTokens: 2,
+                reasoningTokens: 2,
                 cacheReadTokens: 3,
                 webSearchRequests: 2,
                 costUSD: 1.25,
@@ -200,6 +202,7 @@ describe("collectClaudeUsageSummary", () => {
     expect(summary.totalSessions).toBe(4);
     expect(summary.totalInputTokens).toBe(16);
     expect(summary.totalOutputTokens).toBe(7);
+    expect(summary.totalReasoningTokens).toBe(2);
     expect(summary.totalCacheCreationTokens).toBe(1);
     expect(summary.totalCacheReadTokens).toBe(3);
     expect(summary.totalTokens).toBe(27);

@@ -88,6 +88,7 @@ export interface ClaudeCodeStats {
   totalTokens: number;
   totalCacheReadTokens: number;
   totalCacheWriteTokens: number;
+  totalReasoningTokens: number;
   cacheHitRate: number; // 0-100
   totalWebSearchRequests: number;
   totalToolCalls: number;

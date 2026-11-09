@@ -216,6 +216,7 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
     totalTokens,
     totalCacheReadTokens,
     totalCacheWriteTokens,
+    totalReasoningTokens: usageSummary.totalReasoningTokens,
     cacheHitRate,
     totalWebSearchRequests,
     totalToolCalls,

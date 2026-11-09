@@ -58,6 +58,7 @@ export interface ClaudeUsageSummary {
   totalOutputTokens: number;
   totalCacheCreationTokens: number;
   totalCacheReadTokens: number;
+  totalReasoningTokens: number;
   totalTokens: number;
   totalCostUSD: number;
   modelTokenTotals: Map<string, number>;
@@ -179,6 +180,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   let totalOutputTokens = 0;
   let totalCacheCreationTokens = 0;
   let totalCacheReadTokens = 0;
+  let totalReasoningTokens = 0;
   let totalTokens = 0;
   let totalCostUSD = 0;
   let totalMessages = 0;
@@ -211,6 +213,8 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     const output = ensureNumber(usage.output_tokens);
     const cacheCreate = ensureNumber(usage.cache_creation_input_tokens);
     const cacheRead = ensureNumber(usage.cache_read_input_tokens);
+    // Thinking tokens are a subset of output_tokens.
+    const reasoning = ensureNumber(usage.output_tokens_details?.thinking_tokens);
     const webSearchRequests = ensureNumber(usage.server_tool_use?.web_search_requests);
     const entryTotal = input + output + cacheCreate + cacheRead;
 
@@ -218,6 +222,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     totalOutputTokens += output;
     totalCacheCreationTokens += cacheCreate;
     totalCacheReadTokens += cacheRead;
+    totalReasoningTokens += reasoning;
     totalTokens += entryTotal;
     totalWebSearchRequests += webSearchRequests;
 
@@ -264,6 +269,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     totalOutputTokens,
     totalCacheCreationTokens,
     totalCacheReadTokens,
+    totalReasoningTokens,
     totalTokens,
     totalCostUSD,
     modelTokenTotals,

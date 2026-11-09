@@ -18,6 +18,7 @@ export interface UsageEntryOptions {
   messageId?: string;
   inputTokens?: number;
   outputTokens?: number;
+  reasoningTokens?: number;
   cacheReadTokens?: number;
   cacheCreationTokens?: number;
   webSearchRequests?: number;
@@ -57,6 +58,9 @@ export function makeUsageEntry(options: UsageEntryOptions): string {
       output_tokens: options.outputTokens ?? 0,
       cache_read_input_tokens: options.cacheReadTokens ?? 0,
       cache_creation_input_tokens: options.cacheCreationTokens ?? 0,
+      ...(options.reasoningTokens != null
+        ? { output_tokens_details: { thinking_tokens: options.reasoningTokens } }
+        : {}),
       ...(options.webSearchRequests != null
         ? {
             server_tool_use: {
@@ -229,6 +233,7 @@ export function createSampleStats(
     totalTokens: 20000,
     totalCacheReadTokens: 1500,
     totalCacheWriteTokens: 500,
+    totalReasoningTokens: 800,
     cacheHitRate: 75,
     totalWebSearchRequests: 4,
     totalToolCalls: 7,
