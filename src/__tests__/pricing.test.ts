@@ -127,6 +127,25 @@ describe("getModelPricing", () => {
 });
 
 describe("calculateCostUSD", () => {
+  test("bills 1-hour cache writes at twice the input rate", async () => {
+    const pricing = await getModelPricing("claude-opus-5-5");
+    if (!pricing) throw new Error("missing Opus 5.5 pricing");
+
+    const cost = calculateCostUSD(
+      {
+        inputTokens: 1_000,
+        cacheCreationTokens: 400_000,
+        cacheCreation1hTokens: 300_000,
+        cachedInputTokens: 2_000_000,
+        outputTokens: 10_000,
+      },
+      pricing
+    );
+
+    // 100K 5-minute writes at $5/MTok and 300K 1-hour writes at $8/MTok.
+    expect(cost).toBeCloseTo((1_000 * 4 + 100_000 * 5 + 300_000 * 8 + 2_000_000 * 0.2 + 10_000 * 20) / 1e6, 12);
+  });
+
   test("bills a whole Haiku 5.5 request at the higher rates once its prompt exceeds 100K", async () => {
     const pricing = await getModelPricing("claude-haiku-5-5");
     if (!pricing) throw new Error("missing Haiku 5.5 pricing");

@@ -23,7 +23,9 @@ export interface RequestTierPricing {
 
 export interface TokenUsageTotals {
   inputTokens: number;
+  // All cache writes, including the 1-hour ones counted in cacheCreation1hTokens.
   cacheCreationTokens: number;
+  cacheCreation1hTokens?: number;
   cachedInputTokens: number;
   outputTokens: number;
 }
@@ -78,6 +80,9 @@ export function calculateCostUSD(usage: TokenUsageTotals, pricing: ModelPricing)
   const outputTokens = Math.max(usage.outputTokens, 0);
   const cacheCreationTokens = Math.max(usage.cacheCreationTokens, 0);
   const cacheReadTokens = Math.max(usage.cachedInputTokens, 0);
+  // Anthropic bills 1-hour cache writes at 2x base input; the cache-write rate covers 5-minute writes.
+  const cacheCreation1hTokens = Math.min(Math.max(usage.cacheCreation1hTokens ?? 0, 0), cacheCreationTokens);
+  const cacheCreation5mTokens = cacheCreationTokens - cacheCreation1hTokens;
 
   const longContext = pricing.longContextPricing;
   if (longContext) {
@@ -86,7 +91,8 @@ export function calculateCostUSD(usage: TokenUsageTotals, pricing: ModelPricing)
     return (
       inputTokens * rates.inputCostPerToken +
       outputTokens * rates.outputCostPerToken +
-      cacheCreationTokens * rates.cacheCreationCostPerToken +
+      cacheCreation5mTokens * rates.cacheCreationCostPerToken +
+      cacheCreation1hTokens * rates.inputCostPerToken * 2 +
       cacheReadTokens * rates.cachedInputCostPerToken
     );
   }
@@ -101,11 +107,17 @@ export function calculateCostUSD(usage: TokenUsageTotals, pricing: ModelPricing)
     pricing.outputCostPerToken,
     pricing.outputCostPerTokenAbove200k
   );
-  const cacheCreationCost = calculateTieredCost(
-    cacheCreationTokens,
-    pricing.cacheCreationCostPerToken,
-    pricing.cacheCreationCostPerTokenAbove200k
-  );
+  const cacheCreationCost =
+    calculateTieredCost(
+      cacheCreation5mTokens,
+      pricing.cacheCreationCostPerToken,
+      pricing.cacheCreationCostPerTokenAbove200k
+    ) +
+    calculateTieredCost(
+      cacheCreation1hTokens,
+      pricing.inputCostPerToken * 2,
+      pricing.inputCostPerTokenAbove200k == null ? null : pricing.inputCostPerTokenAbove200k * 2
+    );
   const cacheReadCost = calculateTieredCost(
     cacheReadTokens,
     pricing.cachedInputCostPerToken,

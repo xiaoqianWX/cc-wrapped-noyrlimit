@@ -13,7 +13,7 @@ import { isWrappedAvailable } from "./utils/dates";
 import { formatCostFull, formatNumber, formatNumberFull } from "./utils/format";
 import type { ClaudeCodeStats } from "./types";
 
-const VERSION = "1.0.4";
+const VERSION = "1.0.5";
 
 function printHelp() {
   console.log(`

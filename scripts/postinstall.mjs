@@ -212,9 +212,9 @@ async function main() {
     const result = findBinary(packageName);
 
     if (!result) {
-      // Try fallback without baseline/musl
-      const baseParts = packageName.split("-").slice(0, 3);
-      const basePackage = baseParts.join("-");
+      // Try fallback without baseline/musl. The package name itself contains hyphens,
+      // so strip the known suffixes rather than splitting on "-".
+      const basePackage = packageName.replace(/(-baseline)?(-musl)?$/, "");
 
       if (basePackage !== packageName) {
         console.log(`cc-wrapped-noyrlimit: Trying fallback package: ${basePackage}`);

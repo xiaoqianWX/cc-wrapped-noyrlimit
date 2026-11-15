@@ -213,6 +213,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
     const output = ensureNumber(usage.output_tokens);
     const cacheCreate = ensureNumber(usage.cache_creation_input_tokens);
     const cacheRead = ensureNumber(usage.cache_read_input_tokens);
+    const cacheCreate1h = ensureNumber(usage.cache_creation?.ephemeral_1h_input_tokens);
     // Thinking tokens are a subset of output_tokens.
     const reasoning = ensureNumber(usage.output_tokens_details?.thinking_tokens);
     const webSearchRequests = ensureNumber(usage.server_tool_use?.web_search_requests);
@@ -255,6 +256,7 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
               inputTokens: input,
               outputTokens: output,
               cacheCreationTokens: cacheCreate,
+              cacheCreation1hTokens: cacheCreate1h,
               cachedInputTokens: cacheRead,
             },
             pricing

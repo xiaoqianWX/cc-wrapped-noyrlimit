@@ -51,7 +51,16 @@ export function WrappedTemplate({ stats }: { stats: ClaudeCodeStats }) {
       />
       <Header year={stats.year} />
 
-      <div style={{ marginTop: spacing[8], display: "flex", flexDirection: "row", gap: spacing[16], alignItems: "flex-start" }}>
+      <div
+        style={{
+          marginTop: spacing[8],
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          gap: spacing[8],
+          alignItems: "flex-start",
+        }}
+      >
         <HeroStatItem
           label="Started"
           subtitle={formatDate(stats.firstSessionDate)}
@@ -191,7 +200,7 @@ function Header({ year }: { year: number }) {
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const BAR_HEIGHT = 100;
-const BAR_WIDTH = 56;
+const BAR_WIDTH = 48;
 const BAR_GAP = 12;
 
 const HERO_STAT_CONTENT_HEIGHT = BAR_HEIGHT + spacing[2] + 50;
