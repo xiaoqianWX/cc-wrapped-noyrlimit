@@ -78,6 +78,17 @@ export function makeUsageEntry(options: UsageEntryOptions): string {
   return JSON.stringify(entry);
 }
 
+export function makePromptEntry(options: { timestamp: string; sessionId?: string; uuid?: string; text?: string; origin?: string }): string {
+  return JSON.stringify({
+    type: "user",
+    timestamp: options.timestamp,
+    sessionId: options.sessionId ?? "session-1",
+    uuid: options.uuid ?? crypto.randomUUID(),
+    ...(options.origin ? { origin: { kind: options.origin } } : {}),
+    message: { role: "user", content: options.text ?? "hello" },
+  });
+}
+
 export function makeHistoryEntry(options: HistoryEntryOptions): string {
   return JSON.stringify({
     timestamp: new RealDate(options.timestamp).getTime(),

@@ -9,6 +9,7 @@ import {
   installFetchMock,
   jsonResponse,
   makeHistoryEntry,
+  makePromptEntry,
   makeUsageEntry,
   setClaudeConfigDir,
 } from "./helpers";
@@ -80,6 +81,9 @@ describe("calculateStats", () => {
           {
             relativePath: "session.jsonl",
             lines: [
+              makePromptEntry({ timestamp: "2025-04-01T10:00:00Z", sessionId: "session-1" }),
+              makePromptEntry({ timestamp: "2025-04-01T11:59:00Z", sessionId: "session-2" }),
+              makePromptEntry({ timestamp: "2025-04-02T07:59:00Z", sessionId: "session-2" }),
               makeUsageEntry({
                 timestamp: "2025-04-01T10:00:00Z",
                 sessionId: "session-1",

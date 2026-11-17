@@ -12,6 +12,7 @@ import {
   installFetchMock,
   jsonResponse,
   makeHistoryEntry,
+  makePromptEntry,
   makeUsageEntry,
   setClaudeConfigDir,
 } from "./helpers";
@@ -123,6 +124,9 @@ describe("collectClaudeUsageSummary", () => {
                 costUSD: 1.25,
               }),
               "{not-json",
+              makePromptEntry({ timestamp: "2025-01-09T09:30:00Z", sessionId: "session-0", uuid: "p1" }),
+              makePromptEntry({ timestamp: "2025-01-10T09:59:00Z", sessionId: "session-1", uuid: "p2", origin: "human" }),
+              makePromptEntry({ timestamp: "2025-01-10T10:30:00Z", sessionId: "session-1", uuid: "p3", origin: "task-notification", text: "<task-notification>done</task-notification>" }),
               makeUsageEntry({
                 timestamp: "2025-01-09T09:00:00Z",
                 sessionId: "session-0",
@@ -142,6 +146,9 @@ describe("collectClaudeUsageSummary", () => {
           {
             relativePath: "nested/session-b.jsonl",
             lines: [
+              // A resumed copy of p2 must not be counted twice.
+              makePromptEntry({ timestamp: "2025-01-10T09:59:00Z", sessionId: "session-1", uuid: "p2", origin: "human" }),
+              makePromptEntry({ timestamp: "2025-01-10T11:00:00Z", sessionId: "session-2", uuid: "p4" }),
               makeUsageEntry({
                 timestamp: "2025-01-10T11:00:00Z",
                 sessionId: "session-2",
@@ -198,7 +205,8 @@ describe("collectClaudeUsageSummary", () => {
 
     const summary = await collectClaudeUsageSummary(2025);
 
-    expect(summary.totalMessages).toBe(4);
+    // Messages are prompts the user typed: p1, p2 (once) and p4.
+    expect(summary.totalMessages).toBe(3);
     expect(summary.totalSessions).toBe(4);
     expect(summary.totalInputTokens).toBe(16);
     expect(summary.totalOutputTokens).toBe(7);
@@ -213,7 +221,7 @@ describe("collectClaudeUsageSummary", () => {
     expect(summary.dailyActivity).toEqual(
       new Map([
         ["2025-01-09", 1],
-        ["2025-01-10", 3],
+        ["2025-01-10", 2],
       ])
     );
     expect(summary.modelTokenTotals).toEqual(

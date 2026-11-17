@@ -18,7 +18,8 @@ export async function calculateStats(year: number): Promise<ClaudeCodeStats> {
   let totalToolCalls = 0;
 
   const usageDailyActivity = usageSummary.dailyActivity;
-  if (usageDailyActivity.size > 0) {
+  // Raw logs win whenever they cover the year; stats-cache.json is only a fallback.
+  if (usageSummary.totalSessions > 0) {
     for (const [entryDate, messageCount] of usageDailyActivity.entries()) {
       const entryYear = new Date(entryDate).getFullYear();
       if (entryYear !== year) continue;

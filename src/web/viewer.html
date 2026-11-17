@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+/*__FONTS__*/
+:root{/*__THEME__*/}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,select{font:inherit;color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:36px 28px 48px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand img{width:44px;height:44px;object-fit:contain}
+.brand span{font-size:30px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.yearbox{display:flex;align-items:baseline;gap:10px;font-size:26px}
+.yearbox .w{color:var(--muted);font-weight:500}
+.yearbox select{font-size:26px;font-weight:700;color:var(--accent);background:transparent;border:0;border-bottom:2px dashed var(--border);cursor:pointer;padding:0 2px;appearance:none;-webkit-appearance:none}
+.yearbox select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:34px;margin-bottom:16px;color:var(--muted);font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:13px}
+.chip b{font-weight:500;color:var(--muted)}
+.chip button{border:0;background:var(--surface-hover);width:20px;height:20px;border-radius:50%;cursor:pointer;line-height:1;color:var(--text-2)}
+.chip button:hover{background:var(--accent);color:var(--surface)}
+.linkbtn{border:0;background:none;color:var(--accent);cursor:pointer;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.tile .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-size:26px;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .s{font-size:12px;color:var(--text-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .s.warn{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;min-width:0}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.card-head.sub{margin:18px 0 6px}
+h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--text-2)}
+h2 small{letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400;margin-left:8px;font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--text-2)}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button:hover{background:var(--surface-hover)}
+.seg button.on{background:var(--accent);color:var(--surface)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.grid2>.card{margin-bottom:16px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:inherit;fill:var(--muted);font-size:10px}
+.hm rect.d{cursor:pointer}
+.hm rect.d:hover{stroke:var(--text);stroke-width:1.2}
+.hm rect.sel{stroke:var(--accent);stroke-width:2}
+.hm rect.future{opacity:.35}
+.legend{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:8px;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px}
+.series{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px}
+.series button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;cursor:pointer;color:var(--text-2);padding:2px 0}
+.series button:hover{color:var(--text)}
+.series button.off{opacity:.4}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none}
+.tl .bk{fill:transparent;cursor:pointer}
+.tl .bk:hover{fill:var(--surface-hover)}
+.tl .grid{stroke:var(--border);stroke-width:1}
+.tl g.dim{opacity:.3}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap;user-select:none}
+th.l,td.l{text-align:left}
+th[data-act]{cursor:pointer}
+th[data-act]:hover{color:var(--text)}
+th.sorted{color:var(--accent)}
+td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;font-variant-numeric:tabular-nums}
+tr:last-child>td{border-bottom:0}
+tbody tr[data-act]{cursor:pointer}
+tbody tr[data-act]:hover>td{background:var(--surface-hover)}
+tr.on>td{background:var(--surface-hover)}
+tr.on>td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+td.name{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+td.proj{max-width:150px}
+td.muted,.muted{color:var(--muted)}
+.bar{position:relative;height:8px;border-radius:4px;background:var(--surface-hover);min-width:70px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.tablewrap{overflow-x:auto}
+.more{margin-top:10px;text-align:center}
+.more button{border:1px solid var(--border);background:transparent;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--text-2)}
+.more button:hover{background:var(--surface-hover)}
+.tools{display:flex;flex-direction:column;gap:7px}
+.tool{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:13px}
+.tool .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tool .n small{color:var(--muted)}
+.tool .c{text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.rh rect:hover{stroke:var(--text);stroke-width:1}
+.chips{display:inline-flex;gap:6px;flex-wrap:nowrap}
+.mchip{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2)}
+.detail td{background:var(--bg);white-space:normal;text-align:left;padding:14px 16px}
+.detail table{width:auto;margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.detail td,.detail th{padding:6px 12px}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 14px;font-size:12px}
+.kv dt{color:var(--muted)}
+.kv dd{overflow-wrap:anywhere}
+.empty{color:var(--muted);padding:18px 0;text-align:center;font-size:13px}
+footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:8px}
+.tip{position:fixed;z-index:10;pointer-events:none;background:var(--text);color:var(--surface);font-size:12px;line-height:1.5;padding:8px 10px;border-radius:8px;max-width:340px;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.tip b{font-weight:600}
+.tip .row{display:flex;justify-content:space-between;gap:16px}
+.tip .dot{width:8px;height:8px;margin-right:6px}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}header.top{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><img id="logo" alt=""><span id="product"></span></div>
+    <label class="yearbox"><span class="w">wrapped</span><select id="year" aria-label="Year"></select></label>
+  </header>
+  <div class="filters" id="filters"></div>
+  <section class="tiles" id="tiles"></section>
+  <section class="card">
+    <div class="card-head"><h2>Activity<small id="act-sub"></small></h2><div class="seg" id="metric"></div></div>
+    <div id="heatmap"></div>
+    <div class="legend" id="hm-legend"></div>
+    <div class="card-head sub"><h2 id="tl-title">Timeline</h2><div class="seg" id="grain"></div></div>
+    <div id="timeline"></div>
+    <div class="series" id="series"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Models<small>click a row to filter</small></h2></div>
+    <div class="tablewrap" id="models"></div>
+    <div class="note" id="models-note"></div>
+  </section>
+  <div class="grid2" id="rhythm-row">
+    <section class="card">
+      <div class="card-head"><h2>When you work<small id="rh-sub"></small></h2></div>
+      <div id="rhythm"></div>
+      <div class="note" id="rh-note"></div>
+    </section>
+    <section class="card" id="tools-card">
+      <div class="card-head"><h2>Tools<small id="tools-sub"></small></h2></div>
+      <div id="tools"></div>
+    </section>
+  </div>
+  <section class="card">
+    <div class="card-head"><h2>Projects<small>click a row to filter</small></h2></div>
+    <div class="tablewrap" id="projects"></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2 id="sessions-title">Sessions</h2><div class="seg" id="ssort"></div></div>
+    <div class="tablewrap" id="sessions"></div>
+  </section>
+  <footer><span id="foot-l"></span><span id="foot-r"></span></footer>
+</div>
+<div id="tip" class="tip" hidden></div>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const DAY = 86400000;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WD_FULL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+const METRICS = [["prompts", "Prompts"], ["requests", "Requests"], ["tokens", "Tokens"], ["cost", "Cost"]];
+const SERIES = D.theme.series;
+
+// ---------- formatting ----------
+const nf = new Intl.NumberFormat("en-US");
+const cf = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
+const fmtN = (n) => (Math.abs(n) >= 10000 ? cf.format(n) : nf.format(Math.round(n)));
+const fmtFull = (n) => nf.format(Math.round(n));
+const fmtUSD = (n) => {
+  if (!n) return "$0";
+  if (n < 0.01) return "<$0.01";
+  if (n >= 100000) return "$" + cf.format(n);
+  return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+const fmtMetric = (metric, v) => (metric === "cost" ? fmtUSD(v) : fmtN(v));
+const metricLabel = (metric, v) =>
+  metric === "cost" ? fmtUSD(v) : fmtFull(v) + " " + (metric === "tokens" ? "tokens" : metric === "requests" ? (v === 1 ? "request" : "requests") : v === 1 ? "prompt" : "prompts");
+const dDate = (d) => new Date(d * DAY);
+const fmtDay = (d) => { const x = dDate(d); return MONTHS[x.getUTCMonth()] + " " + x.getUTCDate() + ", " + x.getUTCFullYear(); };
+const fmtDayShort = (d) => { const x = dDate(d); return MONTHS[x.getUTCMonth()] + " " + x.getUTCDate(); };
+const weekday = (d) => (((d + 4) % 7) + 7) % 7; // 1970-01-01 was a Thursday
+const yearStart = (y) => Date.UTC(y, 0, 1) / DAY;
+const yearEnd = (y) => Date.UTC(y, 11, 31) / DAY;
+const now = new Date();
+const TODAY = Math.round(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / DAY);
+const fmtDateTime = (ms) => {
+  const x = new Date(ms);
+  return MONTHS[x.getMonth()] + " " + x.getDate() + " " + String(x.getHours()).padStart(2, "0") + ":" + String(x.getMinutes()).padStart(2, "0");
+};
+const fmtSpan = (ms) => {
+  const m = Math.round(ms / 60000);
+  if (m < 1) return "<1m";
+  if (m < 60) return m + "m";
+  const h = Math.floor(m / 60);
+  if (h < 48) return h + "h " + (m % 60) + "m";
+  return Math.round(h / 24) + "d";
+};
+const fmtRange = (r) => (r[0] === r[1] ? fmtDay(r[0]) : fmtDayShort(r[0]) + " – " + fmtDay(r[1]));
+const pct = (a, b) => (b > 0 ? (100 * a) / b : 0);
+
+// ---------- static indexes ----------
+const SP = D.sessions.map((s) => s.project); // session -> project
+const SM = D.sessions.map(() => new Set()); // session -> models used
+for (const r of D.usage) SM[r[0]].add(r[3]);
+const years = new Set([D.defaultYear]);
+for (const r of D.usage) years.add(dDate(r[1]).getUTCFullYear());
+for (const r of D.prompts) years.add(dDate(r[1]).getUTCFullYear());
+const YEARS = [...years].sort((a, b) => b - a);
+
+// ---------- state (mirrored into the URL hash) ----------
+const S = { year: D.defaultYear, project: null, model: null, range: null, metric: "tokens", grain: "week", ssort: "cost", slimit: 20, plimit: 12, open: null, msort: ["tokens", -1], psort: ["cost", -1] };
+function readHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const y = Number(h.get("y"));
+  if (YEARS.includes(y)) S.year = y;
+  const p = h.get("p");
+  if (p !== null) { const i = p === "" ? -1 : D.projects.findIndex((x) => x.path === p); if (i >= 0 || p === "") S.project = i; }
+  const m = h.get("m");
+  if (m) { const i = D.models.findIndex((x) => x.id === m); if (i >= 0) S.model = i; }
+  const r = (h.get("r") || "").split("-").map(Number);
+  if (r.length === 2 && r.every(Number.isFinite)) S.range = [Math.min(r[0], r[1]), Math.max(r[0], r[1])];
+  if (METRICS.some(([k]) => k === h.get("metric"))) S.metric = h.get("metric");
+  if (h.get("g") === "day" || h.get("g") === "week") S.grain = h.get("g");
+}
+function writeHash() {
+  const h = new URLSearchParams();
+  h.set("y", S.year);
+  if (S.project !== null) h.set("p", S.project === -1 ? "" : D.projects[S.project].path);
+  if (S.model !== null) h.set("m", D.models[S.model].id);
+  if (S.range) h.set("r", S.range[0] + "-" + S.range[1]);
+  if (S.metric !== "tokens") h.set("metric", S.metric);
+  if (S.grain !== "week") h.set("g", S.grain);
+  // Sandboxed or srcdoc viewers can refuse URL updates; the page must still render.
+  try { history.replaceState(null, "", "#" + h.toString()); } catch {}
+}
+
+// Model colours stay fixed within a year so filtering never reshuffles them.
+let RANK = new Map();
+function rankModels() {
+  const Y0 = yearStart(S.year), Y1 = yearEnd(S.year), t = new Map();
+  for (const r of D.usage) if (r[1] >= Y0 && r[1] <= Y1) t.set(r[3], (t.get(r[3]) || 0) + r[5] + r[6] + r[7] + r[8]);
+  RANK = new Map([...t.entries()].sort((a, b) => b[1] - a[1]).map(([m], i) => [m, i]));
+}
+const TOPK = Math.max(1, SERIES.length - 1);
+const colorOf = (m) => { const i = RANK.get(m); return i !== undefined && i < TOPK ? SERIES[i] : SERIES[SERIES.length - 1]; };
+const modelName = (m) => (m >= 0 && D.models[m] ? D.models[m].name : "Unknown");
+const projectName = (p) => (p >= 0 ? D.projects[p].name : "(no folder recorded)");
+
+// ---------- aggregation ----------
+function compute() {
+  const Y0 = yearStart(S.year), Y1 = yearEnd(S.year), n = Y1 - Y0 + 1;
+  const R = S.range, P = S.project, M = S.model;
+  const z = () => new Float64Array(n);
+  const ctx = { prompts: z(), requests: z(), tokens: z(), cost: z(), byModel: new Map() };
+  const tot = { prompts: 0, requests: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, cost: 0, unpricedTokens: 0 };
+  const sess = new Map(), proj = new Map(), mods = new Map(), tools = new Map(), active = new Set();
+  const punchP = new Float64Array(168), punchR = new Float64Array(168);
+  const usageAgg = () => ({ requests: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0, cost: 0 });
+  const getSess = (s) => { let a = sess.get(s); if (!a) { a = { s, prompts: 0, requests: 0, tokens: 0, cost: 0, models: new Map(), days: new Set() }; sess.set(s, a); } return a; };
+  const getProj = (p) => { let a = proj.get(p); if (!a) { a = { p, sessions: new Set(), prompts: 0, requests: 0, tokens: 0, cost: 0, days: new Set(), last: -Infinity }; proj.set(p, a); } return a; };
+
+  for (const [s, day, hour, m, req, inp, out, cr, cw, rs, cost] of D.usage) {
+    if (day < Y0 || day > Y1) continue;
+    const p = SP[s], i = day - Y0, tokens = inp + out + cr + cw;
+    const pOK = P === null || p === P, mOK = M === null || m === M, rOK = !R || (day >= R[0] && day <= R[1]);
+    if (pOK && mOK) {
+      ctx.requests[i] += req; ctx.tokens[i] += tokens; ctx.cost[i] += cost;
+      let bm = ctx.byModel.get(m);
+      if (!bm) { bm = { requests: z(), tokens: z(), cost: z() }; ctx.byModel.set(m, bm); }
+      bm.requests[i] += req; bm.tokens[i] += tokens; bm.cost[i] += cost;
+    }
+    if (pOK && mOK && rOK) {
+      tot.requests += req; tot.input += inp; tot.output += out; tot.cacheRead += cr; tot.cacheWrite += cw; tot.reasoning += rs; tot.cost += cost;
+      if (D.models[m] && !D.models[m].priced) tot.unpricedTokens += tokens;
+      const a = getSess(s);
+      a.requests += req; a.tokens += tokens; a.cost += cost; a.days.add(day);
+      let am = a.models.get(m);
+      if (!am) { am = usageAgg(); a.models.set(m, am); }
+      am.requests += req; am.input += inp; am.output += out; am.cacheRead += cr; am.cacheWrite += cw; am.reasoning += rs; am.cost += cost;
+      punchR[weekday(day) * 24 + hour] += req;
+      active.add(day);
+    }
+    if (mOK && rOK) {
+      const a = getProj(p);
+      a.sessions.add(s); a.requests += req; a.tokens += tokens; a.cost += cost; a.days.add(day); if (day > a.last) a.last = day;
+    }
+    if (pOK && rOK) {
+      let a = mods.get(m);
+      if (!a) { a = usageAgg(); mods.set(m, a); }
+      a.requests += req; a.input += inp; a.output += out; a.cacheRead += cr; a.cacheWrite += cw; a.reasoning += rs; a.cost += cost;
+    }
+  }
+  for (const [s, day, hour, c] of D.prompts) {
+    if (day < Y0 || day > Y1) continue;
+    const p = SP[s];
+    const pOK = P === null || p === P, mOK = M === null || SM[s].has(M), rOK = !R || (day >= R[0] && day <= R[1]);
+    if (pOK && mOK) ctx.prompts[day - Y0] += c;
+    if (pOK && mOK && rOK) {
+      tot.prompts += c;
+      const a = getSess(s);
+      a.prompts += c; a.days.add(day);
+      punchP[weekday(day) * 24 + hour] += c;
+      active.add(day);
+    }
+    if (mOK && rOK) {
+      const a = getProj(p);
+      a.sessions.add(s); a.prompts += c; a.days.add(day); if (day > a.last) a.last = day;
+    }
+  }
+  for (const [s, day, t, c] of D.toolCalls) {
+    if (day < Y0 || day > Y1) continue;
+    if (P !== null && SP[s] !== P) continue;
+    if (M !== null && !SM[s].has(M)) continue;
+    if (R && (day < R[0] || day > R[1])) continue;
+    tools.set(t, (tools.get(t) || 0) + c);
+  }
+
+  // Streaks ignore the date selection so they always describe the whole year.
+  let longest = 0, run = 0, longestEnd = -1;
+  for (let i = 0; i < n; i++) {
+    if (ctx.prompts[i] + ctx.requests[i] > 0) { run++; if (run > longest) { longest = run; longestEnd = i; } } else run = 0;
+  }
+  let current = 0;
+  let i = Math.min(TODAY, Y1) - Y0;
+  if (i >= 0 && i < n && ctx.prompts[i] + ctx.requests[i] === 0 && TODAY <= Y1) i--;
+  while (i >= 0 && ctx.prompts[i] + ctx.requests[i] > 0) { current++; i--; }
+  if (TODAY > Y1 + 1) current = 0;
+
+  return { Y0, Y1, n, ctx, tot, sess, proj, mods, tools, active, punchP, punchR, longest, longestEnd, current };
+}
+
+// ---------- rendering helpers ----------
+function seg(id, options, current, act) {
+  $(id).innerHTML = options.map(([k, label]) => '<button type="button" data-act="' + act + '" data-arg="' + k + '"' + (k === current ? ' class="on"' : "") + ">" + esc(label) + "</button>").join("");
+}
+function metricArray(c, metric) { return c.ctx[metric]; }
+function heatLevel(v, max) { return v <= 0 || max <= 0 ? 0 : Math.min(7, 1 + Math.floor(Math.sqrt(v / max) * 6.999)); }
+function niceCeil(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+}
+function dayTip(c, d) {
+  const i = d - c.Y0;
+  return "<b>" + esc(fmtDay(d)) + "</b> · " + WD[weekday(d)] +
+    '<div class="row"><span>Prompts</span><span>' + fmtFull(c.ctx.prompts[i]) + "</span></div>" +
+    '<div class="row"><span>Requests</span><span>' + fmtFull(c.ctx.requests[i]) + "</span></div>" +
+    '<div class="row"><span>Tokens</span><span>' + fmtN(c.ctx.tokens[i]) + "</span></div>" +
+    '<div class="row"><span>Cost</span><span>' + fmtUSD(c.ctx.cost[i]) + "</span></div>";
+}
+
+function renderHeader() {
+  $("logo").src = D.product.logo;
+  $("product").textContent = D.product.name;
+  $("year").innerHTML = YEARS.map((y) => "<option" + (y === S.year ? " selected" : "") + ">" + y + "</option>").join("");
+  $("foot-l").textContent = D.product.url;
+  $("foot-r").textContent = "Generated " + new Date(D.generatedAt).toLocaleString() + " · " + D.product.command + " --web";
+}
+
+function renderFilters() {
+  const parts = [];
+  if (S.project !== null) parts.push(["project", "Project", projectName(S.project)]);
+  if (S.model !== null) parts.push(["model", "Model", modelName(S.model)]);
+  if (S.range) parts.push(["range", S.range[0] === S.range[1] ? "Day" : "Dates", fmtRange(S.range)]);
+  $("filters").innerHTML = parts.length
+    ? parts.map(([k, label, v]) => '<span class="chip"><b>' + label + "</b>" + esc(v) + '<button type="button" title="Remove filter" data-act="clear" data-arg="' + k + '">×</button></span>').join("") +
+      (parts.length > 1 ? '<button type="button" class="linkbtn" data-act="clear" data-arg="all">Clear all</button>' : "")
+    : "<span>Click a day, week, model or project to drill in. Shift-click days to select a range.</span>";
+}
+
+function tile(k, v, s, tip, warn) {
+  return '<div class="tile"' + (tip ? ' data-tip="' + esc(esc(tip)) + '"' : "") + '><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s' + (warn ? " warn" : "") + '">' + (s || "&nbsp;") + "</div></div>";
+}
+function renderTiles(c) {
+  const t = c.tot;
+  const tokens = t.input + t.output + t.cacheRead + t.cacheWrite;
+  const nSess = c.sess.size;
+  const projects = new Set();
+  for (const a of c.sess.values()) if (SP[a.s] >= 0) projects.add(SP[a.s]);
+  const cacheBase = t.cacheRead + t.cacheWrite + t.input;
+  const hit = pct(t.cacheRead, cacheBase);
+  const periodDays = TODAY >= c.Y0 && TODAY <= c.Y1 ? TODAY - c.Y0 + 1 : c.n;
+  const topProject = [...c.proj.values()].filter((a) => S.project === null || a.p === S.project).sort((a, b) => b.tokens - a.tokens)[0];
+  const priced = D.models.some((m) => m.priced);
+  $("tiles").innerHTML = [
+    tile("Sessions", fmtN(nSess), nSess ? "≈" + fmtN(t.prompts / nSess) + " prompts each" : "", fmtFull(nSess) + " sessions"),
+    tile("Prompts", fmtN(t.prompts), "on " + fmtFull(c.active.size) + " active day" + (c.active.size === 1 ? "" : "s"), fmtFull(t.prompts) + " prompts you sent"),
+    tile("Requests", fmtN(t.requests), "model API calls", fmtFull(t.requests) + " model responses"),
+    tile("Tokens", fmtN(tokens), "in " + fmtN(t.input + t.cacheRead + t.cacheWrite) + " · out " + fmtN(t.output), fmtFull(tokens) + " tokens (input incl. cache " + fmtFull(t.input + t.cacheRead + t.cacheWrite) + ", output " + fmtFull(t.output) + ")"),
+    tile("Cost", priced ? fmtUSD(t.cost) : "—", t.unpricedTokens > 0 ? "excl. " + fmtN(t.unpricedTokens) + " unpriced tokens" : "API-price estimate", D.costNote, t.unpricedTokens > 0),
+    tile("Cache hit rate", fmtN(Math.round(hit)) + "%", fmtN(t.cacheRead) + " read" + (D.hasCacheWrite ? " · " + fmtN(t.cacheWrite) + " written" : ""), "Share of input tokens served from cache"),
+    tile("Projects", fmtN(projects.size), topProject ? "top: " + esc(projectName(topProject.p)) : "", topProject ? "Most tokens: " + projectName(topProject.p) : ""),
+    tile("Streak", c.longest + (c.longest === 1 ? " day" : " days"), fmtFull(countActive(c)) + " active days · now " + c.current + "d", "Longest run of consecutive active days in " + S.year + "; active on " + fmtFull(countActive(c)) + " of " + periodDays + " days"),
+  ].join("");
+}
+function countActive(c) { let k = 0; for (let i = 0; i < c.n; i++) if (c.ctx.prompts[i] + c.ctx.requests[i] > 0) k++; return k; }
+
+function renderHeatmap(c) {
+  seg("metric", METRICS, S.metric, "metric");
+  const vals = metricArray(c, S.metric);
+  let max = 0;
+  for (const v of vals) if (v > max) max = v;
+  const cell = 12, gap = 3, step = cell + gap, left = 30, top = 16;
+  const off = weekday(c.Y0), weeks = Math.ceil((off + c.n) / 7);
+  const W = left + weeks * step, H = top + 7 * step;
+  let out = '<svg class="hm" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Activity heatmap">';
+  for (let m = 0; m < 12; m++) {
+    const d = Date.UTC(S.year, m, 1) / DAY;
+    out += '<text x="' + (left + Math.floor((d - c.Y0 + off) / 7) * step) + '" y="10">' + MONTHS[m] + "</text>";
+  }
+  for (const [row, label] of [[1, "Mon"], [3, "Wed"], [5, "Fri"]]) out += '<text x="0" y="' + (top + row * step + cell - 2) + '">' + label + "</text>";
+  for (let i = 0; i < c.n; i++) {
+    const d = c.Y0 + i, slot = i + off;
+    const cls = "d" + (S.range && d >= S.range[0] && d <= S.range[1] ? " sel" : "") + (d > TODAY ? " future" : "");
+    out += '<rect class="' + cls + '" x="' + (left + Math.floor(slot / 7) * step) + '" y="' + (top + (slot % 7) * step) + '" width="' + cell + '" height="' + cell +
+      '" rx="2.5" fill="var(--hm-' + heatLevel(vals[i], max) + ')" data-act="day" data-arg="' + d + '" data-tip="' + esc(dayTip(c, d)) + '"/>';
+  }
+  $("heatmap").innerHTML = out + "</svg>";
+  $("hm-legend").innerHTML = "Less " + [0, 1, 2, 3, 4, 5, 6, 7].map((l) => '<i style="background:var(--hm-' + l + ')"></i>').join("") + " More · " + METRICS.find(([k]) => k === S.metric)[1].toLowerCase() + " per day";
+  const total = vals.reduce((a, b) => a + b, 0);
+  $("act-sub").textContent = metricLabel(S.metric, total) + " in " + S.year;
+}
+
+function renderTimeline(c) {
+  seg("grain", [["week", "Weekly"], ["day", "Daily"]], S.grain, "grain");
+  const metric = S.metric;
+  const off = weekday(c.Y0);
+  const nb = S.grain === "week" ? Math.ceil((off + c.n) / 7) : c.n;
+  const bucketOf = (i) => (S.grain === "week" ? Math.floor((i + off) / 7) : i);
+  const bucketRange = (b) => S.grain === "week" ? [Math.max(c.Y0, c.Y0 + b * 7 - off), Math.min(c.Y1, c.Y0 + b * 7 - off + 6)] : [c.Y0 + b, c.Y0 + b];
+
+  // Series: top models (fixed colours) + Other; prompts have no model split.
+  let series;
+  if (metric === "prompts") {
+    series = [{ key: "p", name: "Prompts", color: "var(--accent)", vals: c.ctx.prompts }];
+  } else {
+    const top = [], other = new Float64Array(c.n);
+    for (const [m, arr] of c.ctx.byModel) {
+      const r = RANK.get(m);
+      if (r !== undefined && r < TOPK) top.push({ key: m, name: modelName(m), color: colorOf(m), vals: arr[metric], r });
+      else arr[metric].forEach((v, i) => (other[i] += v));
+    }
+    top.sort((a, b) => a.r - b.r);
+    series = top;
+    if (other.some((v) => v > 0)) series.push({ key: "o", name: "Other models", color: SERIES[SERIES.length - 1], vals: other });
+  }
+  const B = series.map(() => new Float64Array(nb));
+  series.forEach((s, k) => s.vals.forEach((v, i) => (B[k][bucketOf(i)] += v)));
+  const totals = new Float64Array(nb);
+  B.forEach((arr) => arr.forEach((v, b) => (totals[b] += v)));
+  let max = 0;
+  for (const v of totals) if (v > max) max = v;
+  const ymax = niceCeil(max);
+
+  const W = Math.max(560, $("timeline").clientWidth || 1000), H = 190, L = 54, T = 8, Bm = 22;
+  const bw = (W - L) / nb, ph = H - T - Bm, y = (v) => T + ph - (v / ymax) * ph;
+  const gapPx = bw > 5 ? 1.5 : bw > 2.5 ? 0.6 : 0;
+  let out = '<svg class="tl" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Timeline">';
+  for (const f of [0, 0.5, 1]) {
+    const yy = y(ymax * f);
+    out += '<line class="grid" x1="' + L + '" x2="' + W + '" y1="' + yy + '" y2="' + yy + '"/><text x="' + (L - 8) + '" y="' + (yy + 3) + '" text-anchor="end">' + fmtMetric(metric, ymax * f) + "</text>";
+  }
+  for (let m = 0; m < 12; m++) {
+    const i = Date.UTC(S.year, m, 1) / DAY - c.Y0;
+    out += '<text x="' + (L + bucketOf(i) * bw) + '" y="' + (H - 6) + '">' + MONTHS[m] + "</text>";
+  }
+  for (let b = 0; b < nb; b++) {
+    const [d0, d1] = bucketRange(b);
+    const inSel = !S.range || (d1 >= S.range[0] && d0 <= S.range[1]);
+    let acc = 0, bars = "";
+    series.forEach((s, k) => {
+      const v = B[k][b];
+      if (v <= 0) return;
+      const y1 = y(acc), y0 = y(acc + v);
+      bars += '<rect x="' + (L + b * bw + gapPx / 2) + '" y="' + y0 + '" width="' + Math.max(0.5, bw - gapPx) + '" height="' + Math.max(0.5, y1 - y0) + '" fill="' + s.color + '"/>';
+      acc += v;
+    });
+    const tip = "<b>" + esc(d0 === d1 ? fmtDay(d0) : fmtRange([d0, d1])) + "</b>" +
+      series.filter((s, k) => B[k][b] > 0).map((s) => '<div class="row"><span><i class="dot" style="background:' + s.color + '"></i>' + esc(s.name) + "</span><span>" + fmtMetric(metric, B[series.indexOf(s)][b]) + "</span></div>").join("") +
+      (series.length > 1 ? '<div class="row"><span>Total</span><span>' + fmtMetric(metric, totals[b]) + "</span></div>" : "") +
+      (totals[b] === 0 ? "<div>No activity</div>" : "");
+    out += '<g class="' + (inSel ? "" : "dim") + '"><rect class="bk" x="' + (L + b * bw) + '" y="' + T + '" width="' + bw + '" height="' + ph + '" data-act="range" data-arg="' + d0 + "-" + d1 + '" data-tip="' + esc(tip) + '"/>' + bars + "</g>";
+  }
+  $("timeline").innerHTML = out + "</svg>";
+  $("tl-title").textContent = METRICS.find(([k]) => k === metric)[1] + " per " + (S.grain === "week" ? "week" : "day");
+  $("series").innerHTML = metric === "prompts" ? "" : series.map((s) =>
+    typeof s.key === "number"
+      ? '<button type="button" data-act="model" data-arg="' + s.key + '"' + (S.model !== null && S.model !== s.key ? ' class="off"' : "") + '><i class="dot" style="background:' + s.color + '"></i>' + esc(s.name) + "</button>"
+      : '<button type="button" disabled><i class="dot" style="background:' + s.color + '"></i>' + esc(s.name) + "</button>").join("");
+}
+
+function sortRows(rows, [key, dir]) { return rows.sort((a, b) => (a[key] < b[key] ? -dir : a[key] > b[key] ? dir : 0)); }
+function th(label, key, cur, act, cls) {
+  return "<th" + (cls ? ' class="' + cls + (cur[0] === key ? " sorted" : "") + '"' : cur[0] === key ? ' class="sorted"' : "") + ' data-act="' + act + '" data-arg="' + key + '">' + label + (cur[0] === key ? (cur[1] < 0 ? " ↓" : " ↑") : "") + "</th>";
+}
+
+function renderModels(c) {
+  const rows = [...c.mods.entries()].map(([m, a]) => ({ m, name: modelName(m), ...a, tokens: a.input + a.output + a.cacheRead + a.cacheWrite, priced: !!(D.models[m] && D.models[m].priced) }));
+  const totalTokens = rows.reduce((s, r) => s + r.tokens, 0), totalCost = rows.reduce((s, r) => s + r.cost, 0);
+  const shareBy = S.metric === "cost" ? "cost" : S.metric === "requests" ? "requests" : "tokens";
+  const shareTotal = rows.reduce((s, r) => s + r[shareBy], 0);
+  sortRows(rows, S.msort);
+  if (!rows.length) { $("models").innerHTML = '<div class="empty">No model usage for this selection</div>'; $("models-note").textContent = ""; return; }
+  const ms = S.msort;
+  let out = "<table><thead><tr>" + th("Model", "name", ms, "msort", "l") + th("Requests", "requests", ms, "msort") + th("Input", "input", ms, "msort") + th("Output", "output", ms, "msort") +
+    th("Cache read", "cacheRead", ms, "msort") + (D.hasCacheWrite ? th("Cache write", "cacheWrite", ms, "msort") : "") + th("Tokens", "tokens", ms, "msort") + th("Cost", "cost", ms, "msort") + '<th class="l">Share of ' + shareBy + "</th></tr></thead><tbody>";
+  for (const r of rows) {
+    const share = pct(r[shareBy], shareTotal);
+    out += '<tr data-act="model" data-arg="' + r.m + '"' + (S.model === r.m ? ' class="on"' : "") + '><td class="l name"><span class="mchip"><i class="dot" style="background:' + colorOf(r.m) + '"></i>' + esc(r.name) + "</span></td>" +
+      '<td data-tip="' + fmtFull(r.requests) + '">' + fmtN(r.requests) + '</td><td data-tip="' + fmtFull(r.input) + '">' + fmtN(r.input) + '</td><td data-tip="' + fmtFull(r.output) + (D.hasReasoning && r.reasoning ? " (" + fmtFull(r.reasoning) + " reasoning)" : "") + '">' + fmtN(r.output) + "</td>" +
+      '<td data-tip="' + fmtFull(r.cacheRead) + '">' + fmtN(r.cacheRead) + "</td>" + (D.hasCacheWrite ? '<td data-tip="' + fmtFull(r.cacheWrite) + '">' + fmtN(r.cacheWrite) + "</td>" : "") +
+      '<td data-tip="' + fmtFull(r.tokens) + '">' + fmtN(r.tokens) + "</td>" +
+      (r.priced ? "<td>" + fmtUSD(r.cost) + "</td>" : '<td class="muted" data-tip="No price data for this model, so it is left out of the cost total">—</td>') +
+      '<td class="l"><div class="bar" data-tip="' + share.toFixed(1) + '%"><i style="width:' + share.toFixed(2) + "%;background:" + colorOf(r.m) + '"></i></div></td></tr>';
+  }
+  $("models").innerHTML = out + "</tbody></table>";
+  const unpriced = rows.filter((r) => !r.priced && r.tokens > 0);
+  $("models-note").textContent = D.costNote + (unpriced.length ? ". No price found for " + unpriced.map((r) => r.name).join(", ") + "." : ".") + (totalTokens ? " " + fmtN(totalTokens) + " tokens, " + fmtUSD(totalCost) + " in this selection." : "");
+}
+
+function renderRhythm(c) {
+  const usePrompts = c.punchP.some((v) => v > 0);
+  const vals = usePrompts ? c.punchP : c.punchR;
+  let max = 0, best = -1;
+  vals.forEach((v, i) => { if (v > max) { max = v; best = i; } });
+  const cell = 15, gap = 3, step = cell + gap, left = 34, top = 4;
+  const W = left + 24 * step, H = top + 7 * step + 16;
+  let out = '<svg class="rh" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Activity by weekday and hour">';
+  for (let d = 0; d < 7; d++) {
+    out += '<text x="0" y="' + (top + d * step + cell - 3) + '">' + WD[d] + "</text>";
+    for (let h = 0; h < 24; h++) {
+      const v = vals[d * 24 + h];
+      out += '<rect x="' + (left + h * step) + '" y="' + (top + d * step) + '" width="' + cell + '" height="' + cell + '" rx="2" fill="var(--hm-' + heatLevel(v, max) + ')" data-tip="' +
+        esc("<b>" + WD_FULL[d] + " " + String(h).padStart(2, "0") + ":00–" + String((h + 1) % 24).padStart(2, "0") + ":00</b><div>" + metricLabel(usePrompts ? "prompts" : "requests", v) + "</div>") + '"/>';
+    }
+  }
+  for (const h of [0, 6, 12, 18, 23]) out += '<text x="' + (left + h * step + cell / 2) + '" y="' + (H - 2) + '" text-anchor="middle">' + String(h).padStart(2, "0") + "</text>";
+  $("rhythm").innerHTML = out + "</svg>";
+  $("rh-sub").textContent = usePrompts ? "prompts by hour" : "requests by hour";
+  const total = vals.reduce((a, b) => a + b, 0);
+  if (best < 0) { $("rh-note").textContent = "No activity for this selection."; return; }
+  let night = 0;
+  vals.forEach((v, i) => { const h = i % 24; if (h >= 22 || h < 6) night += v; });
+  $("rh-note").textContent = "Busiest: " + WD_FULL[Math.floor(best / 24)] + " " + String(best % 24).padStart(2, "0") + ":00. " + Math.round(pct(night, total)) + "% between 22:00 and 06:00.";
+}
+
+function prettyTool(name) {
+  const m = /^mcp__(.+?)__(.+)$/.exec(name);
+  return m ? esc(m[2]) + " <small>mcp · " + esc(m[1]) + "</small>" : esc(name);
+}
+function renderTools(c) {
+  if (!D.tools.length) return; // card removed at startup
+  const rows = [...c.tools.entries()].sort((a, b) => b[1] - a[1]);
+  const total = rows.reduce((s, r) => s + r[1], 0);
+  $("tools-sub").textContent = total ? fmtFull(total) + " calls · " + rows.length + " tools" : "";
+  if (!rows.length) { $("tools").innerHTML = '<div class="empty">No tool calls for this selection</div>'; return; }
+  const max = rows[0][1];
+  $("tools").innerHTML = '<div class="tools">' + rows.slice(0, 14).map(([t, n]) =>
+    '<div class="tool" data-tip="' + esc("<b>" + esc(D.tools[t]) + "</b><div>" + fmtFull(n) + " calls · " + pct(n, total).toFixed(1) + "%</div>") + '"><span class="n">' + prettyTool(D.tools[t]) +
+    '</span><div class="bar"><i style="width:' + pct(n, max).toFixed(2) + '%;background:var(--accent)"></i></div><span class="c">' + fmtN(n) + "</span></div>").join("") +
+    (rows.length > 14 ? '<div class="note">+' + (rows.length - 14) + " more tools, " + fmtN(rows.slice(14).reduce((s, r) => s + r[1], 0)) + " calls</div>" : "") + "</div>";
+}
+
+function renderProjects(c) {
+  const rows = [...c.proj.values()].map((a) => ({ p: a.p, name: projectName(a.p), sessions: a.sessions.size, prompts: a.prompts, requests: a.requests, tokens: a.tokens, cost: a.cost, days: a.days.size, last: a.last }));
+  sortRows(rows, S.psort);
+  if (!rows.length) { $("projects").innerHTML = '<div class="empty">No projects for this selection</div>'; return; }
+  const ps = S.psort;
+  let out = "<table><thead><tr>" + th("Project", "name", ps, "psort", "l") + th("Sessions", "sessions", ps, "psort") + th("Prompts", "prompts", ps, "psort") + th("Requests", "requests", ps, "psort") +
+    th("Tokens", "tokens", ps, "psort") + th("Cost", "cost", ps, "psort") + th("Active days", "days", ps, "psort") + th("Last active", "last", ps, "psort") + "</tr></thead><tbody>";
+  for (const r of rows.slice(0, S.plimit)) {
+    out += '<tr data-act="project" data-arg="' + r.p + '"' + (S.project === r.p ? ' class="on"' : "") + '><td class="l name" data-tip="' + esc(r.p >= 0 ? esc(D.projects[r.p].path) : "Sessions without a working directory") + '">' + esc(r.name) + "</td><td>" + fmtN(r.sessions) +
+      "</td><td>" + fmtN(r.prompts) + "</td><td>" + fmtN(r.requests) + '</td><td data-tip="' + fmtFull(r.tokens) + '">' + fmtN(r.tokens) + "</td><td>" + fmtUSD(r.cost) + "</td><td>" + r.days + '</td><td class="muted">' + (Number.isFinite(r.last) ? fmtDayShort(r.last) : "") + "</td></tr>";
+  }
+  out += "</tbody></table>";
+  if (rows.length > S.plimit) out += '<div class="more"><button type="button" data-act="pmore">Show all ' + rows.length + " projects</button></div>";
+  $("projects").innerHTML = out;
+}
+
+function renderSessions(c) {
+  seg("ssort", [["cost", "Cost"], ["tokens", "Tokens"], ["prompts", "Prompts"], ["recent", "Newest"]], S.ssort, "ssort");
+  const rows = [...c.sess.values()];
+  const key = S.ssort;
+  rows.sort((a, b) => (key === "recent" ? D.sessions[b.s].start - D.sessions[a.s].start : b[key] - a[key] || D.sessions[b.s].start - D.sessions[a.s].start));
+  const ctx = [];
+  if (S.range) ctx.push((S.range[0] === S.range[1] ? "on " : "") + fmtRange(S.range));
+  if (S.project !== null) ctx.push("in " + projectName(S.project));
+  if (S.model !== null) ctx.push("using " + modelName(S.model));
+  $("sessions-title").innerHTML = "Sessions<small>" + fmtFull(rows.length) + (ctx.length ? " · " + esc(ctx.join(" · ")) : " in " + S.year) + (S.range || S.model !== null ? " · numbers cover the selection only" : "") + "</small>";
+  if (!rows.length) { $("sessions").innerHTML = '<div class="empty">No sessions for this selection</div>'; return; }
+  let out = '<table><thead><tr><th class="l">Session</th><th class="l">Project</th><th class="l">Started</th><th data-tip="First to last activity in the session">Span</th><th>Prompts</th><th>Tokens</th><th>Cost</th><th class="l">Models</th></tr></thead><tbody>';
+  for (const a of rows.slice(0, S.slimit)) {
+    const s = D.sessions[a.s];
+    const models = [...a.models.entries()].sort((x, y) => (y[1].input + y[1].output + y[1].cacheRead + y[1].cacheWrite) - (x[1].input + x[1].output + x[1].cacheRead + x[1].cacheWrite));
+    const open = S.open === a.s;
+    out += '<tr data-act="session" data-arg="' + a.s + '"' + (open ? ' class="on"' : "") + '><td class="l name" data-tip="' + esc(esc(s.title || "Untitled session") + "<div>" + esc(s.id) + "</div>") + '">' + (s.title ? esc(s.title) : '<span class="muted">Untitled · ' + esc(s.id.slice(0, 8)) + "</span>") + "</td>" +
+      '<td class="l name proj" data-tip="' + esc(esc(s.project >= 0 ? D.projects[s.project].path : projectName(s.project))) + '">' + esc(projectName(s.project)) + '</td><td class="l muted">' + fmtDateTime(s.start) + "</td><td>" + fmtSpan(s.end - s.start) + "</td><td>" + fmtN(a.prompts) +
+      '</td><td data-tip="' + fmtFull(a.tokens) + '">' + fmtN(a.tokens) + "</td><td>" + fmtUSD(a.cost) + '</td><td class="l"><span class="chips">' +
+      '<span class="mchip" data-tip="' + esc(models.map(([m]) => esc(modelName(m))).join("<br>")) + '">' + models.map(([m]) => '<i class="dot" style="background:' + colorOf(m) + '"></i>').join("") + (models.length ? esc(modelName(models[0][0])) : "") + "</span></span></td></tr>";
+    if (open) out += '<tr class="detail"><td colspan="8">' + sessionDetail(a, s, models) + "</td></tr>";
+  }
+  out += "</tbody></table>";
+  if (rows.length > S.slimit) out += '<div class="more"><button type="button" data-act="smore">Show ' + Math.min(20, rows.length - S.slimit) + " more of " + fmtFull(rows.length - S.slimit) + "</button></div>";
+  $("sessions").innerHTML = out;
+}
+function sessionDetail(a, s, models) {
+  const days = [...a.days].sort((x, y) => x - y);
+  let out = '<dl class="kv"><dt>Session</dt><dd>' + esc(s.id) + "</dd><dt>Folder</dt><dd>" + esc(s.project >= 0 ? D.projects[s.project].path : "unknown") + "</dd>" +
+    (s.branch ? "<dt>Branch</dt><dd>" + esc(s.branch) + "</dd>" : "") +
+    "<dt>Ran</dt><dd>" + esc(new Date(s.start).toLocaleString()) + " → " + esc(new Date(s.end).toLocaleString()) + "</dd>" +
+    "<dt>Activity</dt><dd>" + fmtFull(a.prompts) + " prompts · " + fmtFull(a.requests) + " requests · " + fmtFull(a.tokens) + " tokens</dd>" +
+    "<dt>Active days</dt><dd>" + days.length + (days.length ? " (" + esc(days.length === 1 ? fmtDay(days[0]) : fmtDayShort(days[0]) + " – " + fmtDay(days[days.length - 1])) + ")" : "") + "</dd></dl>";
+  if (models.length) {
+    out += '<table><thead><tr><th class="l">Model</th><th>Requests</th><th>Input</th><th>Output</th><th>Cache read</th>' + (D.hasCacheWrite ? "<th>Cache write</th>" : "") + "<th>Cost</th></tr></thead><tbody>";
+    for (const [m, u] of models) {
+      out += '<tr><td class="l"><span class="mchip"><i class="dot" style="background:' + colorOf(m) + '"></i>' + esc(modelName(m)) + "</span></td><td>" + fmtFull(u.requests) + "</td><td>" + fmtFull(u.input) + "</td><td>" + fmtFull(u.output) + "</td><td>" + fmtFull(u.cacheRead) + "</td>" +
+        (D.hasCacheWrite ? "<td>" + fmtFull(u.cacheWrite) + "</td>" : "") + "<td>" + (D.models[m] && D.models[m].priced ? fmtUSD(u.cost) : "—") + "</td></tr>";
+    }
+    out += "</tbody></table>";
+  }
+  return out;
+}
+
+let C = null;
+function render() {
+  writeHash();
+  C = compute();
+  renderFilters();
+  renderTiles(C);
+  renderHeatmap(C);
+  renderTimeline(C);
+  renderModels(C);
+  renderRhythm(C);
+  renderTools(C);
+  renderProjects(C);
+  renderSessions(C);
+}
+
+// ---------- interaction ----------
+function toggle(key, value) { S[key] = S[key] === value ? null : value; S.slimit = 20; S.open = null; }
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.disabled) return;
+  const act = el.dataset.act, arg = el.dataset.arg;
+  if (act === "day") {
+    const d = Number(arg);
+    if (e.shiftKey && S.range) S.range = [Math.min(S.range[0], d), Math.max(S.range[1], d)];
+    else S.range = S.range && S.range[0] === d && S.range[1] === d ? null : [d, d];
+    S.slimit = 20; S.open = null;
+  } else if (act === "range") {
+    const [a, b] = arg.split("-").map(Number);
+    S.range = S.range && S.range[0] === a && S.range[1] === b ? null : [a, b];
+    S.slimit = 20; S.open = null;
+  } else if (act === "model") toggle("model", Number(arg));
+  else if (act === "project") { toggle("project", Number(arg)); S.plimit = 12; }
+  else if (act === "metric") S.metric = arg;
+  else if (act === "grain") S.grain = arg;
+  else if (act === "ssort") { S.ssort = arg; S.slimit = 20; }
+  else if (act === "msort" || act === "psort") { const cur = S[act]; S[act] = [arg, cur[0] === arg ? -cur[1] : arg === "name" ? 1 : -1]; }
+  else if (act === "smore") S.slimit += 20;
+  else if (act === "pmore") S.plimit = Infinity;
+  else if (act === "session") S.open = S.open === Number(arg) ? null : Number(arg);
+  else if (act === "clear") {
+    if (arg === "all") { S.project = S.model = S.range = null; } else S[arg] = null;
+    S.slimit = 20; S.open = null;
+  } else return;
+  hideTip();
+  render();
+});
+$("year").addEventListener("change", (e) => { S.year = Number(e.target.value); S.range = null; S.open = null; S.slimit = 20; rankModels(); render(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && (S.range || S.project !== null || S.model !== null)) { S.project = S.model = S.range = null; S.open = null; render(); }
+});
+
+const tipEl = $("tip");
+let tipFor = null;
+function hideTip() { tipEl.hidden = true; tipFor = null; }
+document.addEventListener("mouseover", (e) => {
+  const el = e.target.closest("[data-tip]");
+  if (!el) return hideTip();
+  if (el !== tipFor) { tipFor = el; tipEl.innerHTML = el.getAttribute("data-tip"); tipEl.hidden = false; }
+});
+document.addEventListener("mousemove", (e) => {
+  if (tipEl.hidden) return;
+  const pad = 14, r = tipEl.getBoundingClientRect();
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - pad;
+  tipEl.style.left = Math.max(8, x) + "px";
+  tipEl.style.top = Math.max(8, y) + "px";
+});
+document.addEventListener("mouseleave", hideTip);
+let resizeTimer = 0;
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => C && renderTimeline(C), 120); });
+
+if (!D.tools.length) { $("tools-card").remove(); $("rhythm-row").style.gridTemplateColumns = "minmax(0,1fr)"; }
+readHash();
+rankModels();
+renderHeader();
+render();
+</script>
+</body>
+</html>

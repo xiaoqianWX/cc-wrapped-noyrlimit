@@ -125,6 +125,8 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   const latestEntries = new Map<string, any>();
   const dailyActivity = new Map<string, number>();
   const sessionIds = new Set<string>();
+  // Prompts the user typed, deduped by uuid (resumed sessions copy earlier turns).
+  const prompts = new Map<string, Date>();
 
   let firstTimestamp: Date | null = null;
 
@@ -160,6 +162,11 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
           continue;
         }
 
+        if (entryRole(entry) === "user" && promptText(entry) !== null) {
+          const promptKey = typeof entry.uuid === "string" ? entry.uuid : `__noid__${prompts.size}`;
+          if (!prompts.has(promptKey)) prompts.set(promptKey, entryDate);
+        }
+
         const uniqueHash = createUniqueHash(entry);
         if (uniqueHash) {
           latestEntries.set(uniqueHash, entry); // last wins
@@ -186,12 +193,13 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   let totalMessages = 0;
   let totalWebSearchRequests = 0;
 
-  for (const entry of latestEntries.values()) {
-    const entryDate = new Date(entry.timestamp);
-    const dateKey = formatDateKey(entryDate);
+  for (const promptDate of prompts.values()) {
+    const dateKey = formatDateKey(promptDate);
     dailyActivity.set(dateKey, (dailyActivity.get(dateKey) || 0) + 1);
     totalMessages += 1;
+  }
 
+  for (const entry of latestEntries.values()) {
     const sessionId = typeof entry?.sessionId === "string" ? entry.sessionId : undefined;
     if (sessionId) {
       sessionIds.add(sessionId);
@@ -284,6 +292,44 @@ export async function collectClaudeUsageSummary(year: number): Promise<ClaudeUsa
   };
 }
 
+// Logs written before `origin` existed mark injected user turns only by their text.
+const NON_PROMPT_PREFIXES = [
+  "<local-command-",
+  "<task-notification>",
+  "<system-reminder>",
+  "<bash-stdout>",
+  "<bash-stderr>",
+  "[Request interrupted",
+  "Caveat: The messages below",
+];
+
+/** "user" / "assistant" for conversation records (very old logs omit `type`). */
+export function entryRole(entry: any): "user" | "assistant" | null {
+  const type = entry?.type ?? entry?.message?.role;
+  return type === "user" || type === "assistant" ? type : null;
+}
+
+/** The text of a prompt the user typed, or null for tool results and injected turns. */
+export function promptText(entry: any): string | null {
+  if (entry.isMeta || entry.isCompactSummary || entry.isSidechain || entry.toolUseResult !== undefined) return null;
+  const origin = entry.origin?.kind;
+  if (typeof origin === "string" && origin !== "human") return null;
+  const content = entry.message?.content;
+  let text: string | null = null;
+  if (typeof content === "string") {
+    text = content;
+  } else if (Array.isArray(content)) {
+    if (content.some((b: any) => b?.type === "tool_result")) return null;
+    const block = content.find((b: any) => b?.type === "text" && typeof b.text === "string");
+    text = block ? block.text : content.some((b: any) => b?.type === "image") ? "[image]" : null;
+  }
+  if (text === null) return null;
+  text = text.trim();
+  if (!text) return null;
+  if (typeof origin !== "string" && NON_PROMPT_PREFIXES.some((prefix) => text!.startsWith(prefix))) return null;
+  return text;
+}
+
 function createEmptyStatsCache(): ClaudeStatsCache {
   return {
     dailyActivity: [],
@@ -292,14 +338,14 @@ function createEmptyStatsCache(): ClaudeStatsCache {
   };
 }
 
-function createUniqueHash(entry: any): string | null {
+export function createUniqueHash(entry: any): string | null {
   const messageId = entry?.message?.id;
   const requestId = entry?.requestId;
   if (!messageId || !requestId) return null;
   return `${messageId}:${requestId}`;
 }
 
-async function getClaudeProjectRoots(): Promise<string[]> {
+export async function getClaudeProjectRoots(): Promise<string[]> {
   const { projectRoots } = await getClaudePaths();
   return projectRoots;
 }
@@ -399,7 +445,7 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-async function listJsonlFiles(dir: string): Promise<string[]> {
+export async function listJsonlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
 
@@ -415,7 +461,7 @@ async function listJsonlFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-function ensureNumber(value: unknown): number {
+export function ensureNumber(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 

@@ -16,6 +16,18 @@ export interface LocalModelPricing extends LocalModelRates {
 // These take precedence over the LiteLLM dataset, which lags new releases.
 // Claude 4.6+ (except Haiku 5.5) bill the full 1M context at standard rates.
 export const LOCAL_MODEL_PRICING: Record<string, LocalModelPricing> = {
+  "claude-fable-5-2": {
+    inputCostPerMToken: 8,
+    cacheWriteCostPerMToken: 10,
+    cacheReadCostPerMToken: 0.2,
+    outputCostPerMToken: 40,
+  },
+  "claude-mythos-5-2": {
+    inputCostPerMToken: 8,
+    cacheWriteCostPerMToken: 10,
+    cacheReadCostPerMToken: 0.2,
+    outputCostPerMToken: 40,
+  },
   "claude-fable-5-1": {
     inputCostPerMToken: 10,
     cacheWriteCostPerMToken: 12.5,
